@@ -1,0 +1,98 @@
+﻿Algorithmic Recorder Trio CA Generator Specification
+This document provides the complete, structured specifications required to prompt a code-generation model to build a working, interactive HTML/JS simulation of a partitioned cellular automaton for a recorder trio. The application will output standard Humdrum **kern notation.
+1. Architectural Specifications
+	•	Grid Size: 1D array of 9 cells.
+	•	Partitions: Divide the 9 cells into three 3-cell blocks (Players):
+	•	Bass Player: Cells 1, 2, 3
+	•	Tenor Player: Cells 4, 5, 6
+	•	Alto Player: Cells 7, 8, 9
+	•	State System: 3-state memory-retaining CA:
+	•	0: Rest (Silence)
+	•	1: Sustain (Held note/Tie)
+	•	2: Strike (Newly articulated/tongued note)
+2. Pitch Mapping (Messiaen Mode 2 / Octatonic Scale on C)
+Map the 9 cells to the following pitches using Humdrum **kern pitch spelling (lowest voice leftmost in spines):
+Player Block
+Cell Index
+Humdrum Pitch Representation
+Standard Notation Pitch
+ 
+Bass (Cells 1-3)
+Cell 1
+C
+C2
+Bass (Cells 1-3)
+Cell 2
+C#
+C#2
+Bass (Cells 1-3)
+Cell 3
+D#
+D#2
+Tenor (Cells 4-6)
+Cell 4
+e
+E3
+Tenor (Cells 4-6)
+Cell 5
+f#
+F#3
+Tenor (Cells 4-6)
+Cell 6
+g
+G3
+Alto (Cells 7-9)
+Cell 7
+aa
+A4
+Alto (Cells 7-9)
+Cell 8
+bb-
+Bb4
+Alto (Cells 7-9)
+Cell 9
+ccc
+C5
+3. State Transition Logic (Run once per step/beat)
+Every step, calculate the next state of the 9-cell grid using these prioritized rules:
+Rule A: Monophonic Block Constraint (Safety Net)
+	•	Within any player's 3-cell block, there can be at most one active note (state 1 or 2).
+	•	If a calculation result yields more than one active note in a block, resolve it by keeping only the center cell active (convert edges to 0).
+Rule B: Decay and Sustain (Option 2)
+	•	If a cell is currently state 2 (Strike), its default next state is 1 (Sustain) in the same cell (holding the note for a second beat).
+	•	If a cell is currently state 1 (Sustain), it must "move" on the next step. It resolves by transferring its energy to a neighboring cell as a state 2 (Strike), leaving its current cell as a 0.
+Rule C: Local Movement & Boundary Cross-Talk (Momentum)
+	•	Local Movement: Inside a player's block, an active note moves left-to-right (1 -> 2 -> 3).
+	•	The "Baton Pass" (Boundary Leaks):
+	•	If the Bass has a note at Cell 3, and Tenor's Cell 4 is empty, the note passes to Tenor Cell 4 as a Strike (2). Bass Cell 3 becomes 0.
+	•	If the Tenor has a note at Cell 6, and Alto's Cell 7 is empty, the note passes to Alto Cell 7 as a Strike (2). Tenor Cell 6 becomes 0.
+	•	The "Rebound" (Collisions):
+	•	If a note tries to pass a boundary but the receiving cell is already occupied, the moving note is blocked. It "rebounds" backward to the left within its own block as a state 2.
+4. Humdrum **kern Output Requirements
+The application must generate and display a text area containing valid Humdrum **kern syntax representing the steps of the CA.
+	•	Time Signature: Assume each CA step is one quarter note (4).
+	•	Layout: Three tab-separated spines representing the players. In Humdrum, the lowest pitch is the leftmost spine (Spine 1: Bass, Spine 2: Tenor, Spine 3: Alto).
+	•	Syntax rules for states:
+	•	State 0: Represented by a quarter rest (4r).
+	•	State 2 (Strike): Represented by a quarter note (e.g., 4C# or 4f#).
+	•	State 1 (Sustain/Tie): Represented by ties. The Strike must begin with "[", and the Sustain must end with "]". (e.g., Step 1: [4C# | Step 2: 4C#]).
+	•	File Structure: Must include standard Humdrum headers (**kern for each spine), bar lines, and closing indicators (*-).
+**kern\t**kern\t**kern
+*Ibass\t*Itenor\t*Ialto
+*M4/4\t*M4/4\t*M4/4
+=1\t=1\t=1
+4C\t4r\t4aa
+[4C#\t4e\t4r
+4C#]\t4f#\t4bb-
+4r\t[4g\t4ccc
+=2\t=2\t=2
+...\t...\t...
+*-\t*-\t*-
+
+5. HTML/JS Interface Requirements
+	•	Create a clean, modern, responsive UI.
+	•	Interactive Grid: A row of 9 cells where users can click to toggle initial states (0, 1, or 2) to design their custom seed.
+	•	Simulation Controls: "Step Forward," "Play/Pause" (auto-stepping), and "Reset to Seed" buttons.
+	•	Speed Slider: To control playback tempo.
+	•	Visualizer: A 2D rolling grid view (scrolling downwards) showing the history of the CA generations. Color code states: 0 (dark gray), 1 (light blue/sustain), 2 (bright green/strike).
+	•	Export Box: A dynamically updated, read-only text area containing the generated Humdrum **kern code so users can copy-paste it directly into notation editors like Verovio Humdrum Viewer.

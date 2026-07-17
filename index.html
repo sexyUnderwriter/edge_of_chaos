@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Recorder Trio CA Generator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="hero">
+        <p class="eyebrow">Algorithmic Recorder Trio</p>
+        <h1>Partitioned Cellular Automaton Composer</h1>
+        <p class="lede">
+          Design a 15-cell seed (5-cell neighborhoods per player), evolve it in real time, and export valid Humdrum **kern for bass, tenor, and alto recorders.
+        </p>
+      </header>
+
+      <section class="panel" aria-labelledby="seed-heading">
+        <h2 id="seed-heading">Seed Grid</h2>
+        <p class="helper">Click a cell to cycle state: 0 Rest, 1 Sustain, 2 Strike.</p>
+        <div id="seed-grid" class="seed-grid" role="grid" aria-label="Initial 15-cell seed"></div>
+        <div class="legend">
+          <div><span class="chip s0"></span> 0 Rest</div>
+          <div><span class="chip s1"></span> 1 Sustain</div>
+          <div><span class="chip s2"></span> 2 Strike</div>
+        </div>
+      </section>
+
+      <section class="panel controls" aria-labelledby="controls-heading">
+        <h2 id="controls-heading">Simulation Controls</h2>
+        <div class="button-row">
+          <button id="step-btn" type="button">Step Forward</button>
+          <button id="play-btn" type="button">Play</button>
+          <button id="reset-btn" type="button">Reset to Seed</button>
+          <button id="kern-btn" type="button">Save KRN</button>
+          <button id="midi-btn" type="button">Download MIDI</button>
+          <button id="midi-preview-btn" type="button">Preview MIDI</button>
+          <button id="audio-btn" type="button">Audio: On</button>
+        </div>
+        <label class="speed" for="speed-input">
+          Tempo
+          <input id="speed-input" type="range" min="80" max="1200" step="20" value="420" />
+          <span id="speed-label">420 ms</span>
+        </label>
+        <label class="speed" for="lambda-input">
+          Global Entropy λ (sets all voices)
+          <input id="lambda-input" type="range" min="0" max="1" step="0.01" value="0.05" />
+          <span id="lambda-label">0.05</span>
+        </label>
+        <label class="speed" for="bass-lambda-input">
+          Bass λ
+          <input id="bass-lambda-input" type="range" min="0" max="1" step="0.01" value="0.05" />
+          <span id="bass-lambda-label">0.05</span>
+        </label>
+        <label class="speed" for="tenor-lambda-input">
+          Tenor λ
+          <input id="tenor-lambda-input" type="range" min="0" max="1" step="0.01" value="0.05" />
+          <span id="tenor-lambda-label">0.05</span>
+        </label>
+        <label class="speed" for="alto-lambda-input">
+          Alto λ
+          <input id="alto-lambda-input" type="range" min="0" max="1" step="0.01" value="0.05" />
+          <span id="alto-lambda-label">0.05</span>
+        </label>
+      </section>
+
+      <section class="panel" aria-labelledby="history-heading">
+        <h2 id="history-heading">CA History</h2>
+        <p class="helper">Rows scroll downward as generations are added.</p>
+        <div id="history-grid" class="history-grid" aria-label="Cellular automaton history"></div>
+      </section>
+
+      <section class="panel" aria-labelledby="export-heading">
+        <h2 id="export-heading">Humdrum **kern Export</h2>
+        <textarea id="kern-output" readonly spellcheck="false" aria-label="Generated Humdrum kern output"></textarea>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
