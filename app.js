@@ -20,6 +20,8 @@ const midiPreviewBtn = document.getElementById("midi-preview-btn");
 const audioBtn = document.getElementById("audio-btn");
 const speedInput = document.getElementById("speed-input");
 const speedLabel = document.getElementById("speed-label");
+const volumeInput = document.getElementById("volume-input");
+const volumeLabel = document.getElementById("volume-label");
 const lambdaInput = document.getElementById("lambda-input");
 const lambdaLabel = document.getElementById("lambda-label");
 const bassLambdaInput = document.getElementById("bass-lambda-input");
@@ -67,7 +69,31 @@ let lambdaByVoice = [
 let audioEnabled = true;
 let audioCtx = null;
 let masterGain = null;
+let outputCompressor = null;
 const voiceSynths = Array(PLAYER_NAMES.length).fill(null);
+
+function getVolumeScalar() {
+  return Number(volumeInput.value) / 100;
+}
+
+function getMasterGainLevel() {
+  return Math.min(2.4, 0.9 * getVolumeScalar());
+}
+
+function getMidiVelocity(isStrike) {
+  const baseVelocity = isStrike ? 94 : 82;
+  const velocity = Math.round(baseVelocity * getVolumeScalar());
+  return Math.max(1, Math.min(127, velocity));
+}
+
+function getTempoBpm() {
+  return Number(speedInput.value);
+}
+
+function getStepDurationMs() {
+  const bpm = Math.max(1, getTempoBpm());
+  return Math.round(60000 / bpm);
+}
 
 function blockStart(index) {
   return Math.floor(index / BLOCK_SIZE) * BLOCK_SIZE;
@@ -281,9 +307,17 @@ function ensureAudioContext() {
   }
 
   audioCtx = new AudioContextCtor();
+  outputCompressor = audioCtx.createDynamicsCompressor();
+  outputCompressor.threshold.setValueAtTime(-18, audioCtx.currentTime);
+  outputCompressor.knee.setValueAtTime(24, audioCtx.currentTime);
+  outputCompressor.ratio.setValueAtTime(3.2, audioCtx.currentTime);
+  outputCompressor.attack.setValueAtTime(0.003, audioCtx.currentTime);
+  outputCompressor.release.setValueAtTime(0.12, audioCtx.currentTime);
+
   masterGain = audioCtx.createGain();
-  masterGain.gain.value = 0.2;
-  masterGain.connect(audioCtx.destination);
+  masterGain.gain.value = getMasterGainLevel();
+  masterGain.connect(outputCompressor);
+  outputCompressor.connect(audioCtx.destination);
   return true;
 }
 
@@ -333,7 +367,7 @@ function startVoice(index, midi, velocity = 0.75, rearticulate = false) {
   const filter = audioCtx.createBiquadFilter();
   filter.type = "bandpass";
   filter.frequency.setValueAtTime(Math.min(3200, freq * 5.5), now);
-  filter.Q.setValueAtTime(7.2, now);
+  filter.Q.setValueAtTime(5.6, now);
 
   const oscMain = audioCtx.createOscillator();
   oscMain.type = "triangle";
@@ -349,7 +383,7 @@ function startVoice(index, midi, velocity = 0.75, rearticulate = false) {
   filter.connect(voiceGain);
   voiceGain.connect(masterGain);
 
-  const targetGain = Math.max(0.03, Math.min(0.25, velocity * 0.18));
+  const targetGain = Math.max(0.06, Math.min(0.6, velocity * 0.32));
   voiceGain.gain.exponentialRampToValueAtTime(targetGain, now + attack);
 
   oscMain.start(now);
@@ -464,7 +498,7 @@ function toVarLen(value) {
 
 function createMidiEvents(historyRows) {
   const events = [];
-  const tempoUsPerQuarter = Math.max(1000, Math.round(Number(speedInput.value) * 1000));
+  const tempoUsPerQuarter = Math.max(1000, Math.round(60000000 / Math.max(1, getTempoBpm())));
 
   events.push({ tick: 0, kind: "meta", bytes: [0xff, 0x03, 0x12, ...stringToBytes("Recorder Trio CA")] });
   events.push({
@@ -498,18 +532,19 @@ function createMidiEvents(historyRows) {
         }
       } else {
         const pitch = PITCH_TO_MIDI[voiceData.pitch];
+        const velocity = getMidiVelocity(voiceData.state === 2);
 
         if (currentNote === null) {
-          events.push({ tick, kind: "on", bytes: [0x90 + voice, pitch, 86] });
+          events.push({ tick, kind: "on", bytes: [0x90 + voice, pitch, velocity] });
           currentNote = { pitch };
         } else if (currentNote.pitch !== pitch) {
           events.push({ tick, kind: "off", bytes: [0x80 + voice, currentNote.pitch, 0] });
-          events.push({ tick, kind: "on", bytes: [0x90 + voice, pitch, 86] });
+          events.push({ tick, kind: "on", bytes: [0x90 + voice, pitch, velocity] });
           currentNote = { pitch };
         } else if (voiceData.state === 2 && prevVoice.state !== 0 && prevVoice.pitch === voiceData.pitch) {
           // Re-articulate matching pitch when a new strike occurs on an already sounding note.
           events.push({ tick, kind: "off", bytes: [0x80 + voice, currentNote.pitch, 0] });
-          events.push({ tick, kind: "on", bytes: [0x90 + voice, pitch, 86] });
+          events.push({ tick, kind: "on", bytes: [0x90 + voice, pitch, velocity] });
         }
       }
 
@@ -636,7 +671,7 @@ function startMidiPreviewTimer() {
     window.clearInterval(midiPreviewTimer);
   }
 
-  const ms = Number(speedInput.value);
+  const ms = getStepDurationMs();
   midiPreviewTimer = window.setInterval(runMidiPreviewTick, ms);
 }
 
@@ -748,7 +783,7 @@ function stopPlayback() {
 function startPlayback() {
   stopMidiPreview();
   stopPlayback();
-  const ms = Number(speedInput.value);
+  const ms = getStepDurationMs();
   playTimer = window.setInterval(stepForward, ms);
   const prev = history.length > 1 ? history[history.length - 2] : Array(TOTAL_CELLS).fill(0);
   triggerAudioForRow(current, prev);
@@ -818,8 +853,8 @@ audioBtn.addEventListener("click", async () => {
 });
 
 speedInput.addEventListener("input", () => {
-  const ms = Number(speedInput.value);
-  speedLabel.textContent = `${ms} ms`;
+  const bpm = getTempoBpm();
+  speedLabel.textContent = `${bpm} BPM`;
 
   if (playTimer !== null) {
     startPlayback();
@@ -827,6 +862,17 @@ speedInput.addEventListener("input", () => {
 
   if (midiPreviewTimer !== null) {
     startMidiPreviewTimer();
+  }
+});
+
+volumeInput.addEventListener("input", () => {
+  const percent = Number(volumeInput.value);
+  volumeLabel.textContent = `${percent}%`;
+
+  if (masterGain && audioCtx) {
+    const now = audioCtx.currentTime;
+    masterGain.gain.cancelScheduledValues(now);
+    masterGain.gain.setTargetAtTime(getMasterGainLevel(), now, 0.02);
   }
 });
 
@@ -862,5 +908,8 @@ altoLambdaInput.addEventListener("input", () => {
   lambdaByVoice[2] = Number(altoLambdaInput.value);
   altoLambdaLabel.textContent = lambdaByVoice[2].toFixed(2);
 });
+
+volumeLabel.textContent = `${Number(volumeInput.value)}%`;
+speedLabel.textContent = `${getTempoBpm()} BPM`;
 
 renderAll();

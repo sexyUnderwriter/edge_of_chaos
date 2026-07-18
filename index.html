@@ -45,9 +45,14 @@
           <button id="audio-btn" type="button">Audio: On</button>
         </div>
         <label class="speed" for="speed-input">
-          Tempo
-          <input id="speed-input" type="range" min="80" max="1200" step="20" value="420" />
-          <span id="speed-label">420 ms</span>
+          Tempo (BPM)
+          <input id="speed-input" type="range" min="40" max="240" step="1" value="143" />
+          <span id="speed-label">143 BPM</span>
+        </label>
+        <label class="speed" for="volume-input">
+          Volume
+          <input id="volume-input" type="range" min="50" max="400" step="5" value="220" />
+          <span id="volume-label">220%</span>
         </label>
         <label class="speed" for="lambda-input">
           Global Entropy λ (sets all voices)
