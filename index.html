@@ -24,12 +24,11 @@
 
       <section class="panel" aria-labelledby="seed-heading">
         <h2 id="seed-heading">Seed Grid</h2>
-        <p class="helper">Click a cell to cycle state: 0 Rest, 1 Sustain, 2 Strike.</p>
+        <p class="helper">Click a cell to toggle 0/1. The center cell in each 5-cell player block is that player gate output.</p>
         <div id="seed-grid" class="seed-grid" role="grid" aria-label="Initial 15-cell seed"></div>
         <div class="legend">
-          <div><span class="chip s0"></span> 0 Rest</div>
-          <div><span class="chip s1"></span> 1 Sustain</div>
-          <div><span class="chip s2"></span> 2 Strike</div>
+          <div><span class="chip s0"></span> 0 Off</div>
+          <div><span class="chip s1"></span> 1 On / Gate Hit</div>
         </div>
       </section>
 
@@ -40,9 +39,16 @@
           <button id="play-btn" type="button">Play</button>
           <button id="reset-btn" type="button">Reset to Seed</button>
           <button id="kern-btn" type="button">Save KRN</button>
+          <button id="xml-btn" type="button">Save XML</button>
           <button id="midi-btn" type="button">Download MIDI</button>
           <button id="midi-preview-btn" type="button">Preview MIDI</button>
           <button id="audio-btn" type="button">Audio: On</button>
+        </div>
+        <div class="seed-controls">
+          <label for="rng-seed-input">RNG Seed</label>
+          <input id="rng-seed-input" type="text" value="trio-001" spellcheck="false" />
+          <button id="rng-apply-btn" type="button">Apply Seed</button>
+          <button id="rng-generate-btn" type="button">Generate Seed</button>
         </div>
         <label class="speed" for="speed-input">
           Tempo (BPM)
@@ -74,17 +80,27 @@
           <input id="alto-lambda-input" type="range" min="0" max="1" step="0.01" value="0.05" />
           <span id="alto-lambda-label">0.05</span>
         </label>
+        <label class="speed" for="block-size-input">
+          Neighborhood Size (odd)
+          <input id="block-size-input" type="range" min="3" max="15" step="2" value="5" />
+          <span id="block-size-label">5 cells</span>
+        </label>
       </section>
 
       <section class="panel" aria-labelledby="history-heading">
         <h2 id="history-heading">CA History</h2>
-        <p class="helper">Rows scroll downward as generations are added.</p>
+        <p class="helper">Rows scroll downward as generations are added. A player advances to the next chord when its center gate cell becomes 1.</p>
         <div id="history-grid" class="history-grid" aria-label="Cellular automaton history"></div>
       </section>
 
       <section class="panel" aria-labelledby="export-heading">
         <h2 id="export-heading">Humdrum **kern Export</h2>
         <textarea id="kern-output" readonly spellcheck="false" aria-label="Generated Humdrum kern output"></textarea>
+      </section>
+
+      <section class="panel" aria-labelledby="xml-export-heading">
+        <h2 id="xml-export-heading">MusicXML Export</h2>
+        <textarea id="xml-output" readonly spellcheck="false" aria-label="Generated MusicXML output"></textarea>
       </section>
     </main>
 

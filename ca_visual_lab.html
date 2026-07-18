@@ -1,0 +1,547 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CA Visual Lab</title>
+    <style>
+      :root {
+        --bg: #f4efe5;
+        --panel: #fffdf8;
+        --ink: #1a252c;
+        --muted: #55666f;
+        --line: #d7dedf;
+        --accent: #d45f2e;
+        --off: #111417;
+        --on: #7fc8ee;
+        --gate-on: #f08a24;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Space Grotesk", "Avenir Next", "Segoe UI", sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at 15% 0%, rgba(212, 95, 46, 0.17), transparent 40%),
+          radial-gradient(circle at 90% 90%, rgba(127, 200, 238, 0.2), transparent 40%),
+          linear-gradient(170deg, #f8f4eb, #e8eef1);
+      }
+
+      main {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 1.2rem;
+        display: grid;
+        gap: 1rem;
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 0.95rem;
+      }
+
+      h1,
+      h2 {
+        margin: 0;
+      }
+
+      .lede {
+        margin: 0.5rem 0 0;
+        color: var(--muted);
+        max-width: 78ch;
+      }
+
+      .controls {
+        display: grid;
+        gap: 0.75rem;
+      }
+
+      .control-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        gap: 0.7rem;
+      }
+
+      label {
+        display: grid;
+        gap: 0.35rem;
+        font-size: 0.93rem;
+        color: var(--muted);
+      }
+
+      input,
+      select,
+      button {
+        font: inherit;
+      }
+
+      input[type="number"],
+      input[type="text"] {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 0.42rem 0.6rem;
+        color: var(--ink);
+        background: #fff;
+      }
+
+      input[type="range"] {
+        width: 100%;
+      }
+
+      .button-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.55rem;
+      }
+
+      button {
+        border: 0;
+        border-radius: 999px;
+        background: var(--ink);
+        color: #fff;
+        padding: 0.55rem 0.92rem;
+        cursor: pointer;
+      }
+
+      button:hover {
+        filter: brightness(1.08);
+      }
+
+      button.accent {
+        background: var(--accent);
+      }
+
+      .meta {
+        margin: 0;
+        font-size: 0.9rem;
+        color: var(--muted);
+      }
+
+      .grid-wrap {
+        overflow: auto;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: #fafcfc;
+        padding: 0.45rem;
+      }
+
+      .seed-grid,
+      .history-row {
+        display: grid;
+        gap: 0.22rem;
+      }
+
+      .seed-grid {
+        margin-bottom: 0.45rem;
+      }
+
+      .seed-cell {
+        min-height: 52px;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        border-radius: 8px;
+        display: grid;
+        place-content: center;
+        gap: 0.1rem;
+        user-select: none;
+        cursor: pointer;
+        font-family: "IBM Plex Mono", "Menlo", monospace;
+      }
+
+      .seed-cell strong {
+        font-size: 0.95rem;
+      }
+
+      .seed-cell small {
+        font-size: 0.66rem;
+      }
+
+      .seed-cell.s0 {
+        background: #ebeff1;
+      }
+
+      .seed-cell.s1 {
+        background: #d7eefb;
+      }
+
+      .seed-cell.is-gate.s0 {
+        background: #111417;
+        color: #f8fafb;
+      }
+
+      .seed-cell.is-gate.s1 {
+        background: var(--gate-on);
+        color: #111417;
+      }
+
+      .seed-cell.block-divider,
+      .history-cell.block-divider {
+        border-right: 3px solid rgba(212, 95, 46, 0.72);
+      }
+
+      .history-grid {
+        display: grid;
+        gap: 0.2rem;
+      }
+
+      .history-cell {
+        height: 14px;
+        border-radius: 4px;
+        border: 1px solid rgba(0, 0, 0, 0.06);
+      }
+
+      .history-cell.s0 {
+        background: var(--off);
+      }
+
+      .history-cell.s1 {
+        background: var(--on);
+      }
+
+      .history-cell.is-gate.s0 {
+        background: #111417;
+      }
+
+      .history-cell.is-gate.s1 {
+        background: var(--gate-on);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="panel">
+        <h1>Partitioned CA Visual Lab</h1>
+        <p class="lede">
+          Standalone visual sandbox for per-player partitioned cellular automata. The center cell in each neighborhood block is the gate cell.
+          Tune neighborhood size and lambda to explore order/chaos regimes.
+        </p>
+      </section>
+
+      <section class="panel controls">
+        <h2>Controls</h2>
+        <div class="control-grid">
+          <label>
+            Players
+            <input id="players-input" type="number" min="1" max="24" step="1" value="6" />
+          </label>
+          <label>
+            Neighborhood Size (odd)
+            <input id="block-size-input" type="number" min="3" max="21" step="2" value="5" />
+          </label>
+          <label>
+            Preview Rows
+            <input id="rows-input" type="number" min="8" max="220" step="1" value="96" />
+          </label>
+          <label>
+            Entropy lambda
+            <input id="lambda-input" type="range" min="0" max="1" step="0.01" value="0.05" />
+            <span id="lambda-label">0.05</span>
+          </label>
+          <label>
+            RNG Seed
+            <input id="rng-seed-input" type="text" value="visual-lab-001" spellcheck="false" />
+          </label>
+        </div>
+        <div class="button-row">
+          <button id="apply-btn" class="accent" type="button">Apply + Reset</button>
+          <button id="random-seed-btn" type="button">Generate Seed String</button>
+          <button id="randomize-seed-btn" type="button">Randomize Seed Cells</button>
+          <button id="step-btn" type="button">Step</button>
+          <button id="play-btn" type="button">Play</button>
+          <button id="stop-btn" type="button">Stop</button>
+        </div>
+        <p id="meta" class="meta"></p>
+      </section>
+
+      <section class="panel">
+        <h2>Seed</h2>
+        <p class="meta">Click any cell to toggle 0/1. Gate cells are highlighted in orange when on, black when off.</p>
+        <div class="grid-wrap">
+          <div id="seed-grid" class="seed-grid"></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>CA History</h2>
+        <div class="grid-wrap">
+          <div id="history-grid" class="history-grid"></div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const playersInput = document.getElementById("players-input");
+      const blockSizeInput = document.getElementById("block-size-input");
+      const rowsInput = document.getElementById("rows-input");
+      const lambdaInput = document.getElementById("lambda-input");
+      const lambdaLabel = document.getElementById("lambda-label");
+      const rngSeedInput = document.getElementById("rng-seed-input");
+      const applyBtn = document.getElementById("apply-btn");
+      const randomSeedBtn = document.getElementById("random-seed-btn");
+      const randomizeSeedBtn = document.getElementById("randomize-seed-btn");
+      const stepBtn = document.getElementById("step-btn");
+      const playBtn = document.getElementById("play-btn");
+      const stopBtn = document.getElementById("stop-btn");
+      const seedGridEl = document.getElementById("seed-grid");
+      const historyGridEl = document.getElementById("history-grid");
+      const metaEl = document.getElementById("meta");
+
+      let playTimer = null;
+      let state = {
+        players: 6,
+        blockSize: 5,
+        rows: 96,
+        lambda: 0.05,
+        seedText: "visual-lab-001",
+        seedCells: [],
+        currentRow: [],
+        history: [],
+      };
+
+      function hashSeed(text) {
+        let h = 1779033703 ^ text.length;
+        for (let i = 0; i < text.length; i += 1) {
+          h = Math.imul(h ^ text.charCodeAt(i), 3432918353);
+          h = (h << 13) | (h >>> 19);
+        }
+        h = Math.imul(h ^ (h >>> 16), 2246822507);
+        h = Math.imul(h ^ (h >>> 13), 3266489909);
+        h ^= h >>> 16;
+        return h >>> 0;
+      }
+
+      function createSeededRandom(seedText) {
+        let s = hashSeed(seedText);
+        return function rnd() {
+          s = (s + 0x6d2b79f5) >>> 0;
+          let t = s;
+          t = Math.imul(t ^ (t >>> 15), t | 1);
+          t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+          return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+      }
+
+      function totalCells() {
+        return state.players * state.blockSize;
+      }
+
+      function gateOffset() {
+        return Math.floor(state.blockSize / 2);
+      }
+
+      function rule30(left, center, right) {
+        return (left ^ (center | right)) & 1;
+      }
+
+      function nextRow(row, rand) {
+        const next = new Array(totalCells()).fill(0);
+        for (let p = 0; p < state.players; p += 1) {
+          const start = p * state.blockSize;
+          for (let i = 0; i < state.blockSize; i += 1) {
+            const idx = start + i;
+            const leftIdx = start + ((i - 1 + state.blockSize) % state.blockSize);
+            const rightIdx = start + ((i + 1) % state.blockSize);
+            let v = rule30(row[leftIdx], row[idx], row[rightIdx]);
+            if (rand() < state.lambda) {
+              v = v === 1 ? 0 : 1;
+            }
+            next[idx] = v;
+          }
+        }
+        return next;
+      }
+
+      function normalizeConfig() {
+        const players = Math.max(1, Math.min(24, Number(playersInput.value) || 6));
+        let blockSize = Math.max(3, Math.min(21, Number(blockSizeInput.value) || 5));
+        if (blockSize % 2 === 0) {
+          blockSize += 1;
+        }
+        const rows = Math.max(8, Math.min(220, Number(rowsInput.value) || 96));
+        const lambda = Math.max(0, Math.min(1, Number(lambdaInput.value) || 0));
+
+        state.players = players;
+        state.blockSize = blockSize;
+        state.rows = rows;
+        state.lambda = lambda;
+        state.seedText = String(rngSeedInput.value || "visual-lab-001").trim() || "visual-lab-001";
+
+        playersInput.value = String(players);
+        blockSizeInput.value = String(blockSize);
+        rowsInput.value = String(rows);
+        lambdaInput.value = String(lambda);
+        lambdaLabel.textContent = lambda.toFixed(2);
+        rngSeedInput.value = state.seedText;
+      }
+
+      function makeGeneratedSeed() {
+        return `visual-${Date.now().toString(36)}-${Math.floor(Math.random() * 1e6).toString(36)}`;
+      }
+
+      function createSeedCells() {
+        const rand = createSeededRandom(`${state.seedText}:seedcells`);
+        const cells = [];
+        for (let i = 0; i < totalCells(); i += 1) {
+          cells.push(rand() < 0.45 ? 1 : 0);
+        }
+        return cells;
+      }
+
+      function resetFromCurrentSeed() {
+        state.currentRow = [...state.seedCells];
+        state.history = [[...state.currentRow]];
+      }
+
+      function rebuildHistory() {
+        const rand = createSeededRandom(`${state.seedText}:history`);
+        state.history = [[...state.seedCells]];
+        let row = [...state.seedCells];
+        for (let i = 1; i < state.rows; i += 1) {
+          row = nextRow(row, rand);
+          state.history.push([...row]);
+        }
+        state.currentRow = [...state.history[state.history.length - 1]];
+      }
+
+      function toggleSeedCell(index) {
+        state.seedCells[index] = state.seedCells[index] === 1 ? 0 : 1;
+        rebuildHistory();
+        renderAll();
+      }
+
+      function renderSeedGrid() {
+        seedGridEl.innerHTML = "";
+        seedGridEl.style.gridTemplateColumns = `repeat(${totalCells()}, minmax(34px, 1fr))`;
+
+        for (let i = 0; i < totalCells(); i += 1) {
+          const cell = document.createElement("button");
+          cell.type = "button";
+          cell.className = `seed-cell s${state.seedCells[i]}`;
+          const inBlock = i % state.blockSize;
+          if (inBlock === gateOffset()) {
+            cell.classList.add("is-gate");
+          }
+          if ((i + 1) % state.blockSize === 0 && i < totalCells() - 1) {
+            cell.classList.add("block-divider");
+          }
+          cell.innerHTML = `<strong>${state.seedCells[i]}</strong><small>P${Math.floor(i / state.blockSize) + 1} C${inBlock + 1}</small>`;
+          cell.addEventListener("click", () => toggleSeedCell(i));
+          seedGridEl.appendChild(cell);
+        }
+      }
+
+      function renderHistory() {
+        historyGridEl.innerHTML = "";
+        for (const row of state.history) {
+          const rowEl = document.createElement("div");
+          rowEl.className = "history-row";
+          rowEl.style.gridTemplateColumns = `repeat(${totalCells()}, minmax(10px, 1fr))`;
+
+          row.forEach((v) => {
+            const i = rowEl.children.length;
+            const cell = document.createElement("div");
+            cell.className = `history-cell s${v}`;
+            const inBlock = i % state.blockSize;
+            if (inBlock === gateOffset()) {
+              cell.classList.add("is-gate");
+            }
+            if ((i + 1) % state.blockSize === 0 && i < totalCells() - 1) {
+              cell.classList.add("block-divider");
+            }
+            rowEl.appendChild(cell);
+          });
+
+          historyGridEl.appendChild(rowEl);
+        }
+      }
+
+      function renderMeta() {
+        metaEl.textContent = `Players: ${state.players} | Neighborhood: ${state.blockSize} | Cells: ${totalCells()} | Lambda: ${state.lambda.toFixed(2)} | Rows: ${state.rows}`;
+      }
+
+      function renderAll() {
+        renderSeedGrid();
+        renderHistory();
+        renderMeta();
+      }
+
+      function stepForward() {
+        const rand = createSeededRandom(`${state.seedText}:manual-step:${Date.now()}`);
+        state.currentRow = nextRow(state.currentRow, rand);
+        state.history.push([...state.currentRow]);
+        if (state.history.length > state.rows) {
+          state.history = state.history.slice(-state.rows);
+        }
+        renderHistory();
+      }
+
+      function startPlay() {
+        if (playTimer !== null) {
+          return;
+        }
+        playTimer = window.setInterval(stepForward, 130);
+      }
+
+      function stopPlay() {
+        if (playTimer !== null) {
+          window.clearInterval(playTimer);
+          playTimer = null;
+        }
+      }
+
+      function applyAndReset() {
+        stopPlay();
+        normalizeConfig();
+        if (state.seedCells.length !== totalCells()) {
+          state.seedCells = createSeedCells();
+        }
+        resetFromCurrentSeed();
+        rebuildHistory();
+        renderAll();
+      }
+
+      function randomizeSeedCells() {
+        stopPlay();
+        normalizeConfig();
+        state.seedCells = createSeedCells();
+        resetFromCurrentSeed();
+        rebuildHistory();
+        renderAll();
+      }
+
+      applyBtn.addEventListener("click", applyAndReset);
+      randomSeedBtn.addEventListener("click", () => {
+        rngSeedInput.value = makeGeneratedSeed();
+        applyAndReset();
+      });
+      randomizeSeedBtn.addEventListener("click", randomizeSeedCells);
+
+      stepBtn.addEventListener("click", () => {
+        stopPlay();
+        stepForward();
+      });
+
+      playBtn.addEventListener("click", startPlay);
+      stopBtn.addEventListener("click", stopPlay);
+
+      lambdaInput.addEventListener("input", () => {
+        const liveLambda = Math.max(0, Math.min(1, Number(lambdaInput.value) || 0));
+        state.lambda = liveLambda;
+        lambdaLabel.textContent = liveLambda.toFixed(2);
+        renderMeta();
+      });
+
+      normalizeConfig();
+      state.seedCells = createSeedCells();
+      resetFromCurrentSeed();
+      rebuildHistory();
+      renderAll();
+    </script>
+  </body>
+</html>

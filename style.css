@@ -5,6 +5,7 @@
   --ink: #172027;
   --muted: #4f616b;
   --accent: #d45f2e;
+  --gate: #f08a24;
   --rest: #2f3438;
   --sustain: #75c2f0;
   --strike: #2fd16f;
@@ -108,6 +109,18 @@ h1 {
   border-right: 3px solid rgba(212, 95, 46, 0.75);
 }
 
+.seed-cell.is-gate {
+  box-shadow: inset 0 0 0 2px rgba(240, 138, 36, 0.85);
+}
+
+.seed-cell.is-gate.state-0 {
+  background: #f1d4b1;
+}
+
+.seed-cell.is-gate.state-1 {
+  background: #f7b955;
+}
+
 .seed-cell strong {
   font-size: 1.15rem;
   text-align: center;
@@ -172,6 +185,28 @@ h1 {
   gap: 0.6rem;
 }
 
+.seed-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.seed-controls label {
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.seed-controls input {
+  width: min(280px, 100%);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.5rem 0.8rem;
+  font: inherit;
+  background: #fff;
+  color: var(--ink);
+}
+
 button {
   appearance: none;
   border: 0;
@@ -233,6 +268,18 @@ button.is-active {
   border-right: 3px solid rgba(212, 95, 46, 0.75);
 }
 
+.history-cell.is-gate {
+  box-shadow: inset 0 0 0 1px rgba(133, 74, 10, 0.35);
+}
+
+.history-cell.is-gate.s0 {
+  background: var(--rest);
+}
+
+.history-cell.is-gate.s1 {
+  background: var(--gate);
+}
+
 .history-cell.s0 {
   background: var(--rest);
 }
@@ -245,7 +292,8 @@ button.is-active {
   background: var(--strike);
 }
 
-#kern-output {
+#kern-output,
+#xml-output {
   width: 100%;
   min-height: 260px;
   resize: vertical;
