@@ -778,6 +778,7 @@ const playBtn = document.getElementById("play-btn");
 const resetBtn = document.getElementById("reset-btn");
 const kernBtn = document.getElementById("kern-btn");
 const xmlBtn = document.getElementById("xml-btn");
+const generateXmlBtn = document.getElementById("generate-xml-btn");
 const midiBtn = document.getElementById("midi-btn");
 const midiPreviewBtn = document.getElementById("midi-preview-btn");
 const audioBtn = document.getElementById("audio-btn");
@@ -844,6 +845,8 @@ let finalPhase = {
   beatsElapsed: 0,
   completed: false,
 };
+let xmlCache = "";
+let xmlCacheDirty = true;
 
 let playTimer = null;
 let midiPreviewTimer = null;
@@ -1025,6 +1028,8 @@ function resetSimulationState() {
     beatsElapsed: 0,
     completed: false,
   };
+
+  invalidateXmlCache();
 }
 
 function getVolumeScalar() {
@@ -1881,7 +1886,7 @@ function downloadKern() {
 }
 
 function downloadXml() {
-  const xmlText = toMusicXml(voiceHistory);
+  const xmlText = getXmlText();
   const blob = new Blob([xmlText], { type: "application/vnd.recordare.musicxml+xml;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
@@ -1892,6 +1897,26 @@ function downloadXml() {
   anchor.click();
   anchor.remove();
   URL.revokeObjectURL(url);
+}
+
+function invalidateXmlCache() {
+  xmlCacheDirty = true;
+  if (xmlOutputEl) {
+    xmlOutputEl.value = "XML is generated on demand. Click Export XML to build the latest file.";
+  }
+}
+
+function getXmlText() {
+  if (xmlCacheDirty) {
+    xmlCache = toMusicXml(voiceHistory);
+    xmlCacheDirty = false;
+  }
+
+  if (xmlOutputEl) {
+    xmlOutputEl.value = xmlCache;
+  }
+
+  return xmlCache;
 }
 
 function stopMidiPreview(resetButtonState = true, silenceVoices = true) {
@@ -2042,7 +2067,12 @@ function renderKern() {
 }
 
 function renderXml() {
-  xmlOutputEl.value = toMusicXml(voiceHistory);
+  if (xmlCacheDirty) {
+    xmlOutputEl.value = "XML is generated on demand. Click Export XML to build the latest file.";
+    return;
+  }
+
+  xmlOutputEl.value = xmlCache;
 }
 
 function renderAll() {
@@ -2069,20 +2099,78 @@ function allPlayersFinished() {
   return playerProgress.every((player) => player.chordIndex >= lastChordIndex);
 }
 
-function appendGeneration(caRow, voices, prevVoices) {
+function appendGeneration(caRow, voices, prevVoices, options = {}) {
+  const { render = true, triggerAudio = true } = options;
   currentCaRow = [...caRow];
   caHistory.push([...currentCaRow]);
   voiceHistory.push(voices);
+  invalidateXmlCache();
 
   if (caHistory.length > 640) {
     caHistory = caHistory.slice(-640);
     voiceHistory = voiceHistory.slice(-640);
   }
 
-  triggerAudioForRow(voices, prevVoices);
+  if (triggerAudio) {
+    triggerAudioForRow(voices, prevVoices);
+  }
+
+  if (render) {
+    renderHistory();
+    renderKern();
+    renderXml();
+  }
+}
+
+function generateFullPieceSilently() {
+  stopPlayback();
+  stopMidiPreview();
+  silenceAllVoices();
+  resetSimulationState();
+
+  const MAX_GENERATION_STEPS = 50000;
+  let steps = 0;
+
+  while (!finalPhase.completed && steps < MAX_GENERATION_STEPS) {
+    if (finalPhase.active) {
+      const prevVoices = voiceHistory[voiceHistory.length - 1];
+      finalPhase.beatsElapsed += 1;
+
+      if (finalPhase.beatsElapsed > FINAL_CHORD_HOLD_BEATS) {
+        const restVoices = createRestVoices();
+        appendGeneration(currentCaRow, restVoices, prevVoices, { render: false, triggerAudio: false });
+        finalPhase.completed = true;
+        break;
+      }
+
+      const heldVoices = prevVoices.map((voice) => ({
+        state: 1,
+        pitch: voice.pitch,
+      }));
+      appendGeneration(currentCaRow, heldVoices, prevVoices, { render: false, triggerAudio: false });
+      steps += 1;
+      continue;
+    }
+
+    const nextCa = nextState(currentCaRow, lambdaByVoice);
+    const { nextPlayers, voices, allFinished } = advancePlayersFromCa(nextCa);
+    const prevVoices = voiceHistory[voiceHistory.length - 1];
+
+    playerProgress = nextPlayers;
+    appendGeneration(nextCa, voices, prevVoices, { render: false, triggerAudio: false });
+
+    if (allFinished) {
+      finalPhase.active = true;
+      finalPhase.beatsElapsed = 1;
+    }
+
+    steps += 1;
+  }
+
   renderHistory();
   renderKern();
   renderXml();
+  return finalPhase.completed;
 }
 
 function stopPlayback() {
@@ -2201,6 +2289,23 @@ kernBtn.addEventListener("click", () => {
 
 xmlBtn.addEventListener("click", () => {
   downloadXml();
+});
+
+generateXmlBtn.addEventListener("click", () => {
+  const originalLabel = generateXmlBtn.textContent;
+  generateXmlBtn.disabled = true;
+  generateXmlBtn.textContent = "Generating...";
+
+  try {
+    const completed = generateFullPieceSilently();
+    if (!completed) {
+      console.warn("Generation cap reached before completion.");
+    }
+    downloadXml();
+  } finally {
+    generateXmlBtn.disabled = false;
+    generateXmlBtn.textContent = originalLabel;
+  }
 });
 
 midiBtn.addEventListener("click", () => {
