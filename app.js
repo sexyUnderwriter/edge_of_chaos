@@ -1221,9 +1221,11 @@ function pitchToXmlParts(pitch) {
   const step = letter.toUpperCase();
   let octave = 4;
   if (letter >= "a" && letter <= "z") {
-    octave = 4 + (repeats - 1);
+    // Match pitchToMidi: lowercase base letters start at octave 3.
+    octave = 3 + (repeats - 1);
   } else {
-    octave = 3 - (repeats - 1);
+    // Match pitchToMidi: uppercase base letters start at octave 2.
+    octave = 2 - (repeats - 1);
   }
 
   let alter = 0;
