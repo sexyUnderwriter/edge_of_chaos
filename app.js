@@ -762,9 +762,9 @@ const SCORE_CHORDS = [
 ];
 
 const VOICE_MIDI_RANGES = [
-  { min: 41, max: 74 }, // Bass recorder comfortable range: F3-D5
-  { min: 48, max: 76 }, // Tenor recorder comfortable range: C4-E5
-  { min: 53, max: 79 }, // Alto recorder comfortable range: F4-G5
+  { min: 53, max: 74 }, // Bass recorder comfortable range: F3-D5
+  { min: 60, max: 76 }, // Tenor recorder comfortable range: C4-E5
+  { min: 65, max: 79 }, // Alto recorder comfortable range: F4-G5
 ];
 
 const BASS_OMIT_PITCHES = new Set(["C", "E"]);
@@ -1221,11 +1221,9 @@ function pitchToXmlParts(pitch) {
   const step = letter.toUpperCase();
   let octave = 4;
   if (letter >= "a" && letter <= "z") {
-    // Match pitchToMidi: lowercase base letters start at octave 3.
-    octave = 3 + (repeats - 1);
+    octave = 4 + (repeats - 1);
   } else {
-    // Match pitchToMidi: uppercase base letters start at octave 2.
-    octave = 2 - (repeats - 1);
+    octave = 3 - (repeats - 1);
   }
 
   let alter = 0;
@@ -1487,23 +1485,23 @@ function pitchToMidi(pitch) {
   const repeats = letters.length;
 
   const lowerBase = {
-    c: 48,
-    d: 50,
-    e: 52,
-    f: 53,
-    g: 55,
-    a: 57,
-    b: 59,
+    c: 60,
+    d: 62,
+    e: 64,
+    f: 65,
+    g: 67,
+    a: 69,
+    b: 71,
   };
 
   const upperBase = {
-    C: 36,
-    D: 38,
-    E: 40,
-    F: 41,
-    G: 43,
-    A: 45,
-    B: 47,
+    C: 48,
+    D: 50,
+    E: 52,
+    F: 53,
+    G: 55,
+    A: 57,
+    B: 59,
   };
 
   let midi = null;
