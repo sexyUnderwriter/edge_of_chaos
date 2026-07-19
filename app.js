@@ -3,28 +3,771 @@ const PLAYER_NAMES = ["Bass", "Tenor", "Alto"];
 const MIDI_TPQ = 480;
 const MIDI_RECORDER_PROGRAM = 73;
 const FINAL_CHORD_HOLD_BEATS = 8;
+const NO_VALID_NOTE_DECAY_LIFE = 8;
 
-// Prescribed note choices per chord step, derived from data_2.krn with tempo ignored.
+// Prescribed note choices per chord step, extracted from wtc1p01.krn (Bach WTC I Prelude 1).
 const SCORE_CHORDS = [
-  ["e", "ee", "ee"],
-  ["ddd", "ee", "f#"],
-  ["ccc", "ee", "g"],
-  ["bb", "ee", "a"],
-  ["aa", "ee", "cc#"],
-  ["ff#", "ee", "dd"],
-  ["eee-", "ee", "f"],
-  ["ccc", "ee", "g"],
-  ["bb-", "ee", "b-"],
-  ["gg", "ee", "cc#"],
-  ["aa", "ee", "b"],
-  ["ccc", "ee", "g#"],
-  ["ff", "ee", "dd#"],
-  ["gg", "ee", "dd"],
-  ["gg#", "ee", "cc"],
-  ["aa", "ee", "a"],
-  ["ccc#", "ee", "g"],
-  ["bb", "ee", "g#"],
+  [
+    "c",
+    "cc",
+    "g"
+  ],
+  [
+    "cc",
+    "e",
+    "ee",
+    "g"
+  ],
+  [
+    "c",
+    "cc",
+    "g"
+  ],
+  [
+    "cc",
+    "e",
+    "ee",
+    "g"
+  ],
+  [
+    "a",
+    "c",
+    "dd"
+  ],
+  [
+    "a",
+    "d",
+    "dd",
+    "ff"
+  ],
+  [
+    "a",
+    "c",
+    "dd"
+  ],
+  [
+    "a",
+    "d",
+    "dd",
+    "ff"
+  ],
+  [
+    "B",
+    "dd",
+    "g"
+  ],
+  [
+    "d",
+    "dd",
+    "ff",
+    "g"
+  ],
+  [
+    "B",
+    "dd",
+    "g"
+  ],
+  [
+    "d",
+    "dd",
+    "ff",
+    "g"
+  ],
+  [
+    "c",
+    "cc",
+    "g"
+  ],
+  [
+    "cc",
+    "e",
+    "ee",
+    "g"
+  ],
+  [
+    "c",
+    "cc",
+    "g"
+  ],
+  [
+    "cc",
+    "e",
+    "ee",
+    "g"
+  ],
+  [
+    "a",
+    "c",
+    "ee"
+  ],
+  [
+    "a",
+    "aa",
+    "e",
+    "ee"
+  ],
+  [
+    "a",
+    "c",
+    "ee"
+  ],
+  [
+    "a",
+    "aa",
+    "e",
+    "ee"
+  ],
+  [
+    "a",
+    "c",
+    "f#"
+  ],
+  [
+    "a",
+    "d",
+    "dd",
+    "f#"
+  ],
+  [
+    "a",
+    "c",
+    "f#"
+  ],
+  [
+    "a",
+    "d",
+    "dd",
+    "f#"
+  ],
+  [
+    "B",
+    "dd",
+    "g"
+  ],
+  [
+    "d",
+    "dd",
+    "g",
+    "gg"
+  ],
+  [
+    "B",
+    "dd",
+    "g"
+  ],
+  [
+    "d",
+    "dd",
+    "g",
+    "gg"
+  ],
+  [
+    "B",
+    "e",
+    "g"
+  ],
+  [
+    "c",
+    "cc",
+    "e",
+    "g"
+  ],
+  [
+    "B",
+    "e",
+    "g"
+  ],
+  [
+    "c",
+    "cc",
+    "e",
+    "g"
+  ],
+  [
+    "A",
+    "e",
+    "g"
+  ],
+  [
+    "c",
+    "cc",
+    "e",
+    "g"
+  ],
+  [
+    "A",
+    "e",
+    "g"
+  ],
+  [
+    "c",
+    "cc",
+    "e",
+    "g"
+  ],
+  [
+    "d",
+    "D",
+    "f#"
+  ],
+  [
+    "A",
+    "cc",
+    "d",
+    "f#"
+  ],
+  [
+    "d",
+    "D",
+    "f#"
+  ],
+  [
+    "A",
+    "cc",
+    "d",
+    "f#"
+  ],
+  [
+    "d",
+    "g",
+    "G"
+  ],
+  [
+    "b",
+    "B",
+    "d",
+    "g"
+  ],
+  [
+    "d",
+    "g",
+    "G"
+  ],
+  [
+    "b",
+    "B",
+    "d",
+    "g"
+  ],
+  [
+    "e",
+    "g",
+    "G"
+  ],
+  [
+    "B-",
+    "cc#",
+    "e",
+    "g"
+  ],
+  [
+    "e",
+    "g",
+    "G"
+  ],
+  [
+    "B-",
+    "cc#",
+    "e",
+    "g"
+  ],
+  [
+    "a",
+    "d",
+    "F"
+  ],
+  [
+    "a",
+    "A",
+    "d",
+    "dd"
+  ],
+  [
+    "a",
+    "d",
+    "F"
+  ],
+  [
+    "a",
+    "A",
+    "d",
+    "dd"
+  ],
+  [
+    "d",
+    "f",
+    "F"
+  ],
+  [
+    "A-",
+    "b",
+    "d",
+    "f"
+  ],
+  [
+    "d",
+    "f",
+    "F"
+  ],
+  [
+    "A-",
+    "b",
+    "d",
+    "f"
+  ],
+  [
+    "c",
+    "E",
+    "g"
+  ],
+  [
+    "c",
+    "cc",
+    "g",
+    "G"
+  ],
+  [
+    "c",
+    "E",
+    "g"
+  ],
+  [
+    "c",
+    "cc",
+    "g",
+    "G"
+  ],
+  [
+    "A",
+    "c",
+    "E"
+  ],
+  [
+    "A",
+    "c",
+    "f",
+    "F"
+  ],
+  [
+    "A",
+    "c",
+    "E"
+  ],
+  [
+    "A",
+    "c",
+    "f",
+    "F"
+  ],
+  [
+    "A",
+    "c",
+    "D"
+  ],
+  [
+    "A",
+    "c",
+    "f",
+    "F"
+  ],
+  [
+    "A",
+    "c",
+    "D"
+  ],
+  [
+    "A",
+    "c",
+    "f",
+    "F"
+  ],
+  [
+    "B",
+    "G",
+    "GG"
+  ],
+  [
+    "B",
+    "D",
+    "f",
+    "G"
+  ],
+  [
+    "B",
+    "G",
+    "GG"
+  ],
+  [
+    "B",
+    "D",
+    "f",
+    "G"
+  ],
+  [
+    "c",
+    "C",
+    "G"
+  ],
+  [
+    "c",
+    "e",
+    "E",
+    "G"
+  ],
+  [
+    "c",
+    "C",
+    "G"
+  ],
+  [
+    "c",
+    "e",
+    "E",
+    "G"
+  ],
+  [
+    "B-",
+    "c",
+    "C"
+  ],
+  [
+    "B-",
+    "c",
+    "e",
+    "G"
+  ],
+  [
+    "B-",
+    "c",
+    "C"
+  ],
+  [
+    "B-",
+    "c",
+    "e",
+    "G"
+  ],
+  [
+    "A",
+    "c",
+    "FF"
+  ],
+  [
+    "A",
+    "c",
+    "e",
+    "F"
+  ],
+  [
+    "A",
+    "c",
+    "FF"
+  ],
+  [
+    "A",
+    "c",
+    "e",
+    "F"
+  ],
+  [
+    "A",
+    "c",
+    "FF#"
+  ],
+  [
+    "A",
+    "c",
+    "C",
+    "e-"
+  ],
+  [
+    "A",
+    "c",
+    "FF#"
+  ],
+  [
+    "A",
+    "c",
+    "C",
+    "e-"
+  ],
+  [
+    "AA-",
+    "B",
+    "c"
+  ],
+  [
+    "B",
+    "c",
+    "d",
+    "F"
+  ],
+  [
+    "AA-",
+    "B",
+    "c"
+  ],
+  [
+    "B",
+    "c",
+    "d",
+    "F"
+  ],
+  [
+    "B",
+    "G",
+    "GG"
+  ],
+  [
+    "B",
+    "d",
+    "F",
+    "G"
+  ],
+  [
+    "B",
+    "G",
+    "GG"
+  ],
+  [
+    "B",
+    "d",
+    "F",
+    "G"
+  ],
+  [
+    "c",
+    "G",
+    "GG"
+  ],
+  [
+    "c",
+    "e",
+    "E",
+    "G"
+  ],
+  [
+    "c",
+    "G",
+    "GG"
+  ],
+  [
+    "c",
+    "e",
+    "E",
+    "G"
+  ],
+  [
+    "c",
+    "G",
+    "GG"
+  ],
+  [
+    "c",
+    "D",
+    "f",
+    "G"
+  ],
+  [
+    "c",
+    "G",
+    "GG"
+  ],
+  [
+    "c",
+    "D",
+    "f",
+    "G"
+  ],
+  [
+    "B",
+    "G",
+    "GG"
+  ],
+  [
+    "B",
+    "D",
+    "f",
+    "G"
+  ],
+  [
+    "B",
+    "G",
+    "GG"
+  ],
+  [
+    "B",
+    "D",
+    "f",
+    "G"
+  ],
+  [
+    "A",
+    "c",
+    "GG"
+  ],
+  [
+    "A",
+    "c",
+    "E-",
+    "f#"
+  ],
+  [
+    "A",
+    "c",
+    "GG"
+  ],
+  [
+    "A",
+    "c",
+    "E-",
+    "f#"
+  ],
+  [
+    "c",
+    "G",
+    "GG"
+  ],
+  [
+    "c",
+    "E",
+    "g",
+    "G"
+  ],
+  [
+    "c",
+    "G",
+    "GG"
+  ],
+  [
+    "c",
+    "E",
+    "g",
+    "G"
+  ],
+  [
+    "c",
+    "G",
+    "GG"
+  ],
+  [
+    "c",
+    "D",
+    "f",
+    "G"
+  ],
+  [
+    "c",
+    "G",
+    "GG"
+  ],
+  [
+    "c",
+    "D",
+    "f",
+    "G"
+  ],
+  [
+    "B",
+    "G",
+    "GG"
+  ],
+  [
+    "B",
+    "D",
+    "f",
+    "G"
+  ],
+  [
+    "B",
+    "G",
+    "GG"
+  ],
+  [
+    "B",
+    "D",
+    "f",
+    "G"
+  ],
+  [
+    "B-",
+    "CC",
+    "G"
+  ],
+  [
+    "B-",
+    "C",
+    "e",
+    "G"
+  ],
+  [
+    "B-",
+    "CC",
+    "G"
+  ],
+  [
+    "B-",
+    "C",
+    "e",
+    "G"
+  ],
+  [
+    "A",
+    "CC",
+    "F"
+  ],
+  [
+    "A",
+    "c",
+    "C",
+    "f"
+  ],
+  [
+    "A",
+    "c",
+    "F"
+  ],
+  [
+    "D",
+    "F"
+  ],
+  [
+    "b",
+    "CC",
+    "g"
+  ],
+  [
+    "b",
+    "BB",
+    "dd",
+    "ff"
+  ],
+  [
+    "b",
+    "dd",
+    "g"
+  ],
+  [
+    "d",
+    "e",
+    "f"
+  ],
+  [
+    "C",
+    "cc",
+    "CC",
+    "e",
+    "g"
+  ]
 ];
+
+const VOICE_MIDI_RANGES = [
+  { min: 41, max: 74 }, // Bass recorder comfortable range: F3-D5
+  { min: 48, max: 76 }, // Tenor recorder comfortable range: C4-E5
+  { min: 53, max: 79 }, // Alto recorder comfortable range: F4-G5
+];
+
+const BASS_OMIT_PITCHES = new Set(["C", "E"]);
 
 const seedGridEl = document.getElementById("seed-grid");
 const historyGridEl = document.getElementById("history-grid");
@@ -167,14 +910,93 @@ function makeGeneratedSeed() {
 }
 
 function randomChoice(items) {
+  if (!items || items.length === 0) {
+    return null;
+  }
   return items[Math.floor(random01() * items.length)];
+}
+
+function shiftPitchOctaveOnce(pitch, direction) {
+  const match = String(pitch || "").match(/^([A-Ga-g]+)([#\-xXn]*)$/);
+  if (!match) {
+    return null;
+  }
+
+  let letters = match[1];
+  const accidental = match[2] || "";
+  const isLower = letters[0] >= "a" && letters[0] <= "z";
+
+  if (direction > 0) {
+    if (isLower) {
+      letters += letters[0];
+    } else if (letters.length > 1) {
+      letters = letters.slice(1);
+    } else {
+      letters = letters.toLowerCase();
+    }
+  } else if (direction < 0) {
+    if (!isLower) {
+      letters = letters[0] + letters;
+    } else if (letters.length > 1) {
+      letters = letters.slice(1);
+    } else {
+      letters = letters.toUpperCase();
+    }
+  }
+
+  return `${letters}${accidental}`;
+}
+
+function shiftPitchByOctaves(pitch, octaves) {
+  let out = pitch;
+  const dir = octaves >= 0 ? 1 : -1;
+  for (let i = 0; i < Math.abs(octaves); i += 1) {
+    out = shiftPitchOctaveOnce(out, dir);
+    if (!out) {
+      return null;
+    }
+  }
+  return out;
+}
+
+function getChordChoicesForVoice(chord, voiceIndex) {
+  const range = VOICE_MIDI_RANGES[voiceIndex];
+  if (!Array.isArray(chord) || !range) {
+    return [];
+  }
+
+  // Literal mode: only pitches explicitly present in the source chord token set.
+  const choices = chord.filter((candidate) => {
+    if (voiceIndex === 0 && BASS_OMIT_PITCHES.has(candidate)) {
+      return false;
+    }
+
+    const midi = pitchToMidi(candidate);
+    if (midi === null) {
+      return false;
+    }
+
+    return midi >= range.min && midi <= range.max;
+  });
+
+  return [...new Set(choices)].sort((a, b) => pitchToMidi(a) - pitchToMidi(b));
+}
+
+function choosePitchForVoice(chord, voiceIndex, fallbackPitch = null) {
+  const choices = getChordChoicesForVoice(chord, voiceIndex);
+  if (choices.length === 0) {
+    return fallbackPitch;
+  }
+
+  return randomChoice(choices);
 }
 
 function createInitialPlayers() {
   const firstChord = SCORE_CHORDS[0];
-  return PLAYER_NAMES.map(() => ({
+  return PLAYER_NAMES.map((_, voiceIndex) => ({
     chordIndex: 0,
-    pitch: randomChoice(firstChord),
+    pitch: choosePitchForVoice(firstChord, voiceIndex),
+    decayRemaining: NO_VALID_NOTE_DECAY_LIFE,
   }));
 }
 
@@ -210,7 +1032,7 @@ function getVolumeScalar() {
 }
 
 function getMasterGainLevel() {
-  return Math.min(2.4, 0.9 * getVolumeScalar());
+  return Math.min(0.9, 0.28 * getVolumeScalar());
 }
 
 function getMidiVelocity(isStrike) {
@@ -279,11 +1101,35 @@ function advancePlayersFromCa(nextCaRow) {
     const hit = nextCaRow[outputCell] === 1;
     const player = nextPlayers[voice];
     let state = 1;
+    let advanced = false;
 
     if (hit && player.chordIndex < lastChordIndex) {
       player.chordIndex += 1;
-      player.pitch = randomChoice(SCORE_CHORDS[player.chordIndex]);
+      advanced = true;
+    }
+
+    const currentChord = SCORE_CHORDS[player.chordIndex];
+    const choices = getChordChoicesForVoice(currentChord, voice);
+
+    if (advanced && choices.length > 0) {
+      player.pitch = randomChoice(choices);
+      player.decayRemaining = NO_VALID_NOTE_DECAY_LIFE;
       state = 2;
+    } else if (choices.length === 0) {
+      if (player.pitch && (player.decayRemaining ?? NO_VALID_NOTE_DECAY_LIFE) > 0) {
+        player.decayRemaining = (player.decayRemaining ?? NO_VALID_NOTE_DECAY_LIFE) - 1;
+        state = 1;
+      } else {
+        player.pitch = null;
+        player.decayRemaining = 0;
+        state = 0;
+      }
+    } else {
+      if (!player.pitch) {
+        player.pitch = randomChoice(choices);
+        state = 2;
+      }
+      player.decayRemaining = NO_VALID_NOTE_DECAY_LIFE;
     }
 
     voices.push({ state, pitch: player.pitch });
@@ -778,7 +1624,7 @@ function startVoice(index, midi, velocity = 0.75, rearticulate = false) {
   filter.connect(voiceGain);
   voiceGain.connect(masterGain);
 
-  const targetGain = Math.max(0.06, Math.min(0.6, velocity * 0.32));
+  const targetGain = Math.max(0.09, Math.min(0.75, velocity * 0.44));
   voiceGain.gain.exponentialRampToValueAtTime(targetGain, now + attack);
 
   oscMain.start(now);
