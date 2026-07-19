@@ -1,9 +1,9 @@
 const BLOCK_SIZE = 5;
 const PLAYER_NAMES = ["Bass", "Tenor", "Alto"];
 const CELL_PITCHES = [
-  "F", "G", "A", "c", "d",
-  "cc", "dd", "ee", "gg", "aa",
-  "ff", "gg", "aa", "ccc", "ddd",
+  "F", "G", "A", "B", "c",
+  "c", "d", "e", "f", "g",
+  "cc", "dd", "ee", "ff", "gg",
 ];
 const BLOCK_LABELS = PLAYER_NAMES.flatMap((name) => Array(BLOCK_SIZE).fill(name));
 const TOTAL_CELLS = CELL_PITCHES.length;
@@ -35,16 +35,17 @@ const PITCH_TO_MIDI = {
   F: 41,
   G: 43,
   A: 45,
+  B: 47,
   c: 48,
   d: 50,
+  e: 52,
+  f: 53,
+  g: 55,
   cc: 60,
   dd: 62,
   ee: 64,
   ff: 65,
   gg: 67,
-  aa: 69,
-  ccc: 72,
-  ddd: 74,
 };
 
 const MIDI_TPQ = 480;
@@ -365,9 +366,11 @@ function startVoice(index, midi, velocity = 0.75, rearticulate = false) {
   voiceGain.gain.setValueAtTime(0.0001, now);
 
   const filter = audioCtx.createBiquadFilter();
-  filter.type = "bandpass";
-  filter.frequency.setValueAtTime(Math.min(3200, freq * 5.5), now);
-  filter.Q.setValueAtTime(5.6, now);
+  // Keep harmonics bright, but avoid an overly narrow band that can vanish on
+  // some devices/output chains.
+  filter.type = "lowpass";
+  filter.frequency.setValueAtTime(Math.min(4200, freq * 3.4), now);
+  filter.Q.setValueAtTime(0.9, now);
 
   const oscMain = audioCtx.createOscillator();
   oscMain.type = "triangle";
@@ -383,7 +386,7 @@ function startVoice(index, midi, velocity = 0.75, rearticulate = false) {
   filter.connect(voiceGain);
   voiceGain.connect(masterGain);
 
-  const targetGain = Math.max(0.06, Math.min(0.6, velocity * 0.32));
+  const targetGain = Math.max(0.09, Math.min(0.75, velocity * 0.44));
   voiceGain.gain.exponentialRampToValueAtTime(targetGain, now + attack);
 
   oscMain.start(now);
