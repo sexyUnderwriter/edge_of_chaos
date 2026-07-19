@@ -92,10 +92,10 @@ Thus, CA morphology is reduced to a per-voice event stream at one distinguished 
 For each voice $v$, progression is:
 
 ```math
-k_v(t+1)=
+k_v(t+1) =
 \begin{cases}
-k_v(t)+1, & \mathrm{hit}_v(t)=1 \;\land\; k_v(t)<K-1 \\
-k_v(t), & \mathrm{otherwise}
+k_v(t)+1, & \text{if } \mathrm{hit}_v(t)=1 \text{ and } k_v(t)<K-1 \\
+k_v(t), & \text{otherwise}
 \end{cases}
 ```
 
