@@ -19,7 +19,12 @@ Core idea:
 
 ### 2.2 Voice State
 For each voice $v \in \{0,1,2\}$ (Bass, Tenor, Alto):
-- Chord index: $k_v(t) \in \{0,\ldots,K-1\}$, where $K = |\text{SCORE\_CHORDS}|$.
+- Chord index: $k_v(t) \in \{0,\ldots,K-1\}$, where
+
+```math
+K = \left|\mathrm{SCORE\_CHORDS}\right|
+```
+
 - Active pitch token: $p_v(t)$ (Humdrum pitch string).
 - Articulation state in output stream: strike/rest/sustain behavior represented in generated notation tokens.
 
