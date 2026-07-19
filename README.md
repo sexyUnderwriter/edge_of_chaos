@@ -35,15 +35,15 @@ Each player block evolves independently via Rule 30 with stochastic bit flips.
 ### 3.1 Block-local Rule 30
 For a block-local index `j` with wrap-around neighbors `j-1, j, j+1`:
 
-$$
-R_{30}(l,c,r) = l \oplus (c \lor r).
-$$
+```math
+R_{30}(l,c,r) = l \oplus (c \lor r)
+```
 
 So before noise,
 
-$$
-x'_j(t+1) = R_{30}(x_{j-1}(t), x_j(t), x_{j+1}(t)).
-$$
+```math
+x'_j(t+1) = R_{30}(x_{j-1}(t), x_j(t), x_{j+1}(t))
+```
 
 ### 3.2 Entropy/Noise (lambda)
 Each block has a lambda parameter $\lambda_v$.
@@ -53,9 +53,9 @@ After Rule 30 is computed for a cell in voice block `v`:
 
 Equivalent Bernoulli perturbation model:
 
-$$
-x_j(t+1) = x'_j(t+1) \oplus \eta_j(t), \quad \eta_j(t) \sim \mathrm{Bernoulli}(\lambda_v).
-$$
+```math
+x_j(t+1) = x'_j(t+1) \oplus \eta_j(t), \qquad \eta_j(t) \sim \mathrm{Bernoulli}(\lambda_v)
+```
 
 This is a stochastic CA (SCA): deterministic local rule + independent random perturbation.
 
@@ -63,15 +63,19 @@ This is a stochastic CA (SCA): deterministic local rule + independent random per
 
 For each block of size `b`, the gate/output cell is the center index:
 
-$$
-g = \lfloor b/2 \rfloor.
-$$
+```math
+g = \lfloor b/2 \rfloor
+```
 
 A gate hit for voice $v$ at time $t$ is:
 
-$$
-\mathrm{hit}_v(t) = \mathbf{1}\{x_{vb+g}(t)=1\}
-$$
+```math
+\mathrm{hit}_v(t) =
+\begin{cases}
+1, & x_{vb+g}(t)=1 \\
+0, & x_{vb+g}(t)=0
+\end{cases}
+```
 where $g=\lfloor b/2 \rfloor$ and $vb+g$ is the center-cell index for block $v$.
 
 Thus, CA morphology is reduced to a per-voice event stream at one distinguished cell per block.
@@ -82,13 +86,13 @@ Thus, CA morphology is reduced to a per-voice event stream at one distinguished 
 
 For each voice $v$, progression is:
 
-$$
+```math
 k_v(t+1)=
 \begin{cases}
-k_v(t)+1, & \text{if } \mathrm{hit}_v(t)=1 \text{ and } k_v(t)<K-1,\\
-k_v(t), & \text{otherwise.}
+k_v(t)+1, & \mathrm{hit}_v(t)=1 \;\land\; k_v(t)<K-1 \\
+k_v(t), & \mathrm{otherwise}
 \end{cases}
-$$
+```
 
 This creates asynchronous progression: voices may advance at different times, but always move forward, never backward.
 
@@ -107,9 +111,9 @@ When a voice enters a chord state `k`, it chooses a pitch token from chord tones
 ### 6.3 Literal Chord-Tone Mode
 Given a chord $C_k$ at progression index $k$, the admissible pitch set for voice $v$ is:
 
-$$
-A_v(k) = \left\{ q \in C_k : \mathrm{midi}(q) \in [L_v, U_v] \;\wedge\; (v \ne \mathrm{Bass} \;\vee\; q \notin \{C,E\}) \right\}.
-$$
+```math
+A_v(k)=\{q\in C_k:\ \mathrm{midi}(q)\in[L_v,U_v]\ \land\ (v\ne\mathrm{Bass}\ \lor\ q\notin\{C,E\})\}
+```
 
 Interpretation:
 1. Only literal tokens present in the source chord are eligible.
@@ -118,9 +122,9 @@ Interpretation:
 
 If $A_v(k)$ is non-empty, the selected pitch is sampled uniformly from $A_v(k)$:
 
-$$
-p_v \sim \mathrm{Unif}(A_v(k)).
-$$
+```math
+p_v \sim \mathrm{Unif}(A_v(k))
+```
 
 ### 6.4 No-Valid-Note Decay Rule
 If $A_v(k)$ is empty, the voice does not immediately drop to rest. Instead, it applies a finite decay-life hold:
@@ -132,14 +136,14 @@ If $A_v(k)$ is empty, the voice does not immediately drop to rest. Instead, it a
 
 Equivalent update sketch:
 
-$$
+```math
 d_v(t+1)=
 \begin{cases}
-D, & \text{if } A_v(k_v(t))\neq\varnothing,\\
-d_v(t)-1, & \text{if } A_v(k_v(t))=\varnothing \text{ and } d_v(t)>0,\\
-0, & \text{otherwise,}
+D, & A_v(k_v(t))\neq\varnothing \\
+d_v(t)-1, & A_v(k_v(t))=\varnothing \;\land\; d_v(t)>0 \\
+0, & \mathrm{otherwise}
 \end{cases}
-$$
+```
 
 with rest state entered when $A_v(k_v(t))=\varnothing$ and $d_v(t)=0$.
 
