@@ -5,7 +5,7 @@ const MIDI_RECORDER_PROGRAM = 73;
 const FINAL_CHORD_HOLD_BEATS = 8;
 const NO_VALID_NOTE_DECAY_LIFE = 8;
 const BREATH_MAX_BEATS = 8;
-const BREATH_REST_BEATS = 1;
+const BREATH_REST_BEATS = 0;
 
 // Prescribed note choices per chord step, extracted from wtc1p01.krn (Bach WTC I Prelude 1).
 const SCORE_CHORDS = [
@@ -1142,11 +1142,13 @@ function advancePlayersFromCa(nextCaRow) {
     const choices = getChordChoicesForVoice(currentChord, voice);
 
     if (advanced && choices.length > 0) {
-      player.pitch = randomChoice(choices);
+      const nextPitch = randomChoice(choices);
+      const samePitch = Boolean(player.pitch && nextPitch === player.pitch);
+      player.pitch = nextPitch;
       player.decayRemaining = NO_VALID_NOTE_DECAY_LIFE;
-      player.breathBeats = player.pitch ? 1 : 0;
+      player.breathBeats = samePitch ? (player.breathBeats ?? 0) + 1 : (player.pitch ? 1 : 0);
       player.forcedRestRemaining = 0;
-      state = 2;
+      state = samePitch ? 1 : 2;
     } else if (choices.length === 0) {
       if (player.pitch && (player.decayRemaining ?? NO_VALID_NOTE_DECAY_LIFE) > 0) {
         player.decayRemaining = (player.decayRemaining ?? NO_VALID_NOTE_DECAY_LIFE) - 1;
@@ -1440,9 +1442,10 @@ function buildXmlPart(historyRows, voiceIndex, partId) {
         const nextVoice = historyRows[nextRowIndex][voiceIndex];
         const nextIsRest = nextVoice.state === 0 || !nextVoice.pitch;
         const samePitch = !isRest && !nextIsRest && nextVoice.pitch === currentVoice.pitch;
+        const nextIsAttack = nextVoice.state === 2;
         const sameRest = isRest && nextIsRest;
 
-        if (!samePitch && !sameRest) {
+        if ((!samePitch || nextIsAttack) && !sameRest) {
           break;
         }
 
@@ -1455,10 +1458,10 @@ function buildXmlPart(historyRows, voiceIndex, partId) {
         const previousVoice = rowIndex > 0 ? historyRows[rowIndex - 1][voiceIndex] : null;
         const nextVoice = rowIndex + runLength < historyRows.length ? historyRows[rowIndex + runLength][voiceIndex] : null;
         const tieStop = Boolean(
-          previousVoice && previousVoice.state !== 0 && previousVoice.pitch === currentVoice.pitch,
+          previousVoice && previousVoice.state !== 0 && previousVoice.state !== 2 && previousVoice.pitch === currentVoice.pitch,
         );
         const tieStart = Boolean(
-          nextVoice && nextVoice.state !== 0 && nextVoice.pitch === currentVoice.pitch,
+          nextVoice && nextVoice.state !== 0 && nextVoice.state !== 2 && nextVoice.pitch === currentVoice.pitch,
         );
 
         lines.push(buildXmlNote({
@@ -1920,7 +1923,15 @@ function downloadKern() {
   URL.revokeObjectURL(url);
 }
 
-function downloadXml() {
+function downloadXml(forceRefresh = false) {
+  if (forceRefresh) {
+    reseedRng(rngSeedInput.value);
+    const completed = generateFullPieceSilently();
+    if (!completed) {
+      console.warn("Generation cap reached before completion.");
+    }
+  }
+
   const xmlText = getXmlText();
   const blob = new Blob([xmlText], { type: "application/vnd.recordare.musicxml+xml;charset=utf-8" });
   const url = URL.createObjectURL(blob);
@@ -2367,7 +2378,7 @@ kernBtn.addEventListener("click", () => {
 });
 
 xmlBtn.addEventListener("click", () => {
-  downloadXml();
+  downloadXml(true);
 });
 
 generateXmlBtn.addEventListener("click", () => {
@@ -2376,11 +2387,7 @@ generateXmlBtn.addEventListener("click", () => {
   generateXmlBtn.textContent = "Generating...";
 
   try {
-    const completed = generateFullPieceSilently();
-    if (!completed) {
-      console.warn("Generation cap reached before completion.");
-    }
-    downloadXml();
+    downloadXml(true);
   } finally {
     generateXmlBtn.disabled = false;
     generateXmlBtn.textContent = originalLabel;
