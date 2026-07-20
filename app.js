@@ -4,6 +4,8 @@ const MIDI_TPQ = 480;
 const MIDI_RECORDER_PROGRAM = 73;
 const FINAL_CHORD_HOLD_BEATS = 8;
 const NO_VALID_NOTE_DECAY_LIFE = 8;
+const BREATH_MAX_BEATS = 8;
+const BREATH_REST_BEATS = 1;
 
 // Prescribed note choices per chord step, extracted from wtc1p01.krn (Bach WTC I Prelude 1).
 const SCORE_CHORDS = [
@@ -996,11 +998,16 @@ function choosePitchForVoice(chord, voiceIndex, fallbackPitch = null) {
 
 function createInitialPlayers() {
   const firstChord = SCORE_CHORDS[0];
-  return PLAYER_NAMES.map((_, voiceIndex) => ({
-    chordIndex: 0,
-    pitch: choosePitchForVoice(firstChord, voiceIndex),
-    decayRemaining: NO_VALID_NOTE_DECAY_LIFE,
-  }));
+  return PLAYER_NAMES.map((_, voiceIndex) => {
+    const pitch = choosePitchForVoice(firstChord, voiceIndex);
+    return {
+      chordIndex: 0,
+      pitch,
+      decayRemaining: NO_VALID_NOTE_DECAY_LIFE,
+      breathBeats: pitch ? 1 : 0,
+      forcedRestRemaining: 0,
+    };
+  });
 }
 
 function snapshotVoices(players, strikeAll = false) {
@@ -1113,28 +1120,56 @@ function advancePlayersFromCa(nextCaRow) {
       advanced = true;
     }
 
+    if ((player.forcedRestRemaining ?? 0) > 0) {
+      player.forcedRestRemaining -= 1;
+      player.pitch = null;
+      player.decayRemaining = 0;
+      player.breathBeats = 0;
+      voices.push({ state: 0, pitch: null });
+      continue;
+    }
+
+    if (player.pitch && (player.breathBeats ?? 0) >= BREATH_MAX_BEATS) {
+      player.pitch = null;
+      player.decayRemaining = 0;
+      player.breathBeats = 0;
+      player.forcedRestRemaining = Math.max(0, BREATH_REST_BEATS - 1);
+      voices.push({ state: 0, pitch: null });
+      continue;
+    }
+
     const currentChord = SCORE_CHORDS[player.chordIndex];
     const choices = getChordChoicesForVoice(currentChord, voice);
 
     if (advanced && choices.length > 0) {
       player.pitch = randomChoice(choices);
       player.decayRemaining = NO_VALID_NOTE_DECAY_LIFE;
+      player.breathBeats = player.pitch ? 1 : 0;
+      player.forcedRestRemaining = 0;
       state = 2;
     } else if (choices.length === 0) {
       if (player.pitch && (player.decayRemaining ?? NO_VALID_NOTE_DECAY_LIFE) > 0) {
         player.decayRemaining = (player.decayRemaining ?? NO_VALID_NOTE_DECAY_LIFE) - 1;
+        player.breathBeats = (player.breathBeats ?? 0) + 1;
+        player.forcedRestRemaining = 0;
         state = 1;
       } else {
         player.pitch = null;
         player.decayRemaining = 0;
+        player.breathBeats = 0;
+        player.forcedRestRemaining = 0;
         state = 0;
       }
     } else {
       if (!player.pitch) {
         player.pitch = randomChoice(choices);
+        player.breathBeats = 1;
         state = 2;
+      } else {
+        player.breathBeats = (player.breathBeats ?? 0) + 1;
       }
       player.decayRemaining = NO_VALID_NOTE_DECAY_LIFE;
+      player.forcedRestRemaining = 0;
     }
 
     voices.push({ state, pitch: player.pitch });
@@ -2202,10 +2237,54 @@ function stepForward() {
       return;
     }
 
-    const heldVoices = prevVoices.map((voice) => ({
-      state: 1,
-      pitch: voice.pitch,
-    }));
+    const nextPlayers = playerProgress.map((player) => ({ ...player }));
+    const heldVoices = [];
+
+    for (let voice = 0; voice < PLAYER_NAMES.length; voice += 1) {
+      const player = nextPlayers[voice];
+      const currentChord = SCORE_CHORDS[player.chordIndex];
+      const choices = getChordChoicesForVoice(currentChord, voice);
+
+      if ((player.forcedRestRemaining ?? 0) > 0) {
+        player.forcedRestRemaining -= 1;
+        player.pitch = null;
+        player.decayRemaining = 0;
+        player.breathBeats = 0;
+        heldVoices.push({ state: 0, pitch: null });
+        continue;
+      }
+
+      if (player.pitch && (player.breathBeats ?? 0) >= BREATH_MAX_BEATS) {
+        player.pitch = null;
+        player.decayRemaining = 0;
+        player.breathBeats = 0;
+        player.forcedRestRemaining = Math.max(0, BREATH_REST_BEATS - 1);
+        heldVoices.push({ state: 0, pitch: null });
+        continue;
+      }
+
+      if (!player.pitch) {
+        if (choices.length > 0) {
+          player.pitch = randomChoice(choices);
+          player.decayRemaining = NO_VALID_NOTE_DECAY_LIFE;
+          player.breathBeats = 1;
+          player.forcedRestRemaining = 0;
+          heldVoices.push({ state: 2, pitch: player.pitch });
+        } else {
+          player.decayRemaining = 0;
+          player.breathBeats = 0;
+          heldVoices.push({ state: 0, pitch: null });
+        }
+        continue;
+      }
+
+      player.decayRemaining = NO_VALID_NOTE_DECAY_LIFE;
+      player.breathBeats = (player.breathBeats ?? 0) + 1;
+      player.forcedRestRemaining = 0;
+      heldVoices.push({ state: 1, pitch: player.pitch });
+    }
+
+    playerProgress = nextPlayers;
     appendGeneration(currentCaRow, heldVoices, prevVoices);
     return;
   }
