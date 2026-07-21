@@ -1101,8 +1101,8 @@ function buildPatternOrder(rng) {
 
 function buildRuleTable(lambda, patternOrder) {
   const table = new Array(8).fill(0);
-  const kActive = Math.round(lambda * patternOrder.length);
-  for (let i = 0; i < kActive; i += 1) {
+  const activeCount = Math.round(lambda * patternOrder.length);
+  for (let i = 0; i < activeCount; i += 1) {
     table[patternOrder[i]] = 1;
   }
   return table;
