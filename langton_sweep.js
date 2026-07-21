@@ -1119,6 +1119,12 @@ function buildRuleTable(lambda, patternOrder) {
   for (let i = 0; i < activeCount; i += 1) {
     table[patternOrder[i]] = 1;
   }
+
+  // At the top of the sweep, treat lambda as total life so dead blocks can re-seed.
+  if (lambda >= 1 - Number.EPSILON) {
+    table[0] = 1;
+  }
+
   return table;
 }
 
