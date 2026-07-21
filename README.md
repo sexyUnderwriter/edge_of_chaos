@@ -50,11 +50,15 @@ So before noise,
 x'_j(t+1) = R_{30}(x_{j-1}(t), x_j(t), x_{j+1}(t))
 ```
 
-### 3.2 Entropy/Noise (lambda)
+### 3.2 Bit-Flip Noise (lambda)
 Each block has a lambda parameter $\lambda_v$.
 After Rule 30 is computed for a cell in voice block `v`:
 - With probability $\lambda_v$, flip the bit.
 - With probability $1-\lambda_v$, keep it.
+
+Interpretation note:
+- In this implementation, $\lambda$ is a flip probability, not a monotonic "entropy" dial.
+- The most uncertain flip process is near $\lambda=0.5$; $\lambda=0$ and $\lambda=1$ are both deterministic transforms.
 
 Equivalent Bernoulli perturbation model:
 
