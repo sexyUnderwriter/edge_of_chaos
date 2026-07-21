@@ -1006,14 +1006,12 @@ function choosePitchForVoice(chord, voiceIndex, fallbackPitch = null) {
 }
 
 function createInitialPlayers() {
-  const firstChord = SCORE_CHORDS[0];
   return PLAYER_NAMES.map((_, voiceIndex) => {
-    const pitch = choosePitchForVoice(firstChord, voiceIndex);
     return {
       chordIndex: 0,
-      pitch,
-      decayRemaining: NO_VALID_NOTE_DECAY_LIFE,
-      breathBeats: pitch ? 1 : 0,
+      pitch: null,
+      decayRemaining: 0,
+      breathBeats: 0,
       forcedRestRemaining: 0,
     };
   });
@@ -1044,7 +1042,7 @@ function resetSimulationState() {
   currentCaRow = [...seed];
   caHistory = [[...currentCaRow]];
   playerProgress = createInitialPlayers();
-  voiceHistory = [snapshotVoices(playerProgress, true)];
+  voiceHistory = [createRestVoices()];
   finalPhase = {
     active: false,
     beatsElapsed: 0,
@@ -1285,14 +1283,16 @@ function advancePlayersFromCa(nextCaRow) {
       }
     } else {
       if (!player.pitch) {
-        player.pitch = randomChoice(choices);
-        player.breathBeats = 1;
-        state = 2;
+        player.decayRemaining = 0;
+        player.breathBeats = 0;
+        player.forcedRestRemaining = 0;
+        state = 0;
       } else {
         player.breathBeats = (player.breathBeats ?? 0) + 1;
+        state = 1;
+        player.decayRemaining = NO_VALID_NOTE_DECAY_LIFE;
+        player.forcedRestRemaining = 0;
       }
-      player.decayRemaining = NO_VALID_NOTE_DECAY_LIFE;
-      player.forcedRestRemaining = 0;
     }
 
     voices.push({ state, pitch: player.pitch });
