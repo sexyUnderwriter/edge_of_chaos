@@ -1,0 +1,35 @@
+WTC I Prelude in C (BWV 846) - Summary Statistics
+Source file: wtc1p01.krn
+
+1) Pitch-Class Usage Percentages
+Method: Count all note tokens by pitch class, excluding rests, null spine placeholders (.), barlines, and metadata.
+Total notes counted: 613
+
+Pitch Class	Count	Percent
+C	118	19.2496%
+C#	4	0.6525%
+D	91	14.8450%
+Eb	8	1.3051%
+E	73	11.9086%
+F	73	11.9086%
+F#	14	2.2838%
+G	116	18.9233%
+Ab	6	0.9788%
+A	54	8.8091%
+Bb	12	1.9576%
+B	44	7.1778%
+
+2) Duration Percentages (Ties Included in Sounding Length)
+Method: Merge tied note fragments into single sounding events, then classify by total sounding duration.
+Total sounded note events (after tie-merging): 549
+
+Duration Class	Count	Percent
+16th	412	75.0455%
+1.75 quarters	64	11.6576%
+half (2 quarters)	64	11.6576%
+3.75 quarters	2	0.3643%
+whole (4 quarters)	7	1.2750%
+
+Notes:
+- 1.75-quarter events come from tied combinations such as dotted eighth + quarter.
+- 3.75-quarter events come from longer tied aggregates near the cadence.
