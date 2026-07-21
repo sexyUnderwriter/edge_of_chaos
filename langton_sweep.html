@@ -82,7 +82,13 @@
             <option value="reverse">Reverse (end → start, hold)</option>
             <option value="bounce">Bounce (start ↔ end, repeat)</option>
             <option value="loop">Loop (start → end, reset)</option>
+            <option value="manual">Manual (fixed λ)</option>
           </select>
+        </label>
+        <label class="speed" for="manual-lambda-input">
+          Manual λ
+          <input id="manual-lambda-input" type="range" min="0" max="1" step="0.01" value="0.50" />
+          <span id="manual-lambda-label">0.50</span>
         </label>
         <label class="speed" for="sweep-duration-input">
           Sweep Duration (steps)

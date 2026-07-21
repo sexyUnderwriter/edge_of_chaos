@@ -796,6 +796,8 @@ const sweepStartLabel = document.getElementById("sweep-start-label");
 const sweepEndInput = document.getElementById("sweep-end-input");
 const sweepEndLabel = document.getElementById("sweep-end-label");
 const sweepModeSelect = document.getElementById("sweep-mode-select");
+const manualLambdaInput = document.getElementById("manual-lambda-input");
+const manualLambdaLabel = document.getElementById("manual-lambda-label");
 const sweepDurationInput = document.getElementById("sweep-duration-input");
 const sweepDurationLabel = document.getElementById("sweep-duration-label");
 const currentLambdaDisplayEl = document.getElementById("current-lambda-display");
@@ -857,6 +859,7 @@ let maxHistoryRows = 96;
 let sweepStartLambda = 0.0;
 let sweepEndLambda = 1.0;
 let sweepMode = "forward";
+let manualLambda = 0.5;
 let sweepDuration = 96;
 let sweepStep = 0;
 let patternOrders = [[], [], []];
@@ -1031,7 +1034,7 @@ function resetSimulationState() {
   reseedRng(rngSeedText);
   initPatternOrders();
   sweepStep = 0;
-  updateRuleTables(sweepStartLambda);
+  updateRuleTables(getSweepLambdaAtStep(sweepStep));
   if (currentLambdaDisplayEl) {
     currentLambdaDisplayEl.textContent = currentLambda.toFixed(3);
   }
@@ -1096,12 +1099,25 @@ function buildPatternOrder(rng) {
     const j = Math.floor(rng() * (i + 1));
     [patterns[i], patterns[j]] = [patterns[j], patterns[i]];
   }
+
+  // Ensure the first activatable pattern can affect the default single-gate seed
+  // (neighborhoods 001, 010, 100), so a non-zero lambda does not immediately die out.
+  const seedResponsivePatterns = [1, 2, 4];
+  const preferred = seedResponsivePatterns[Math.floor(rng() * seedResponsivePatterns.length)];
+  const preferredIndex = patterns.indexOf(preferred);
+  if (preferredIndex > 0) {
+    [patterns[0], patterns[preferredIndex]] = [patterns[preferredIndex], patterns[0]];
+  }
+
   return patterns;
 }
 
 function buildRuleTable(lambda, patternOrder) {
   const table = new Array(8).fill(0);
-  const activeCount = Math.round(lambda * patternOrder.length);
+  let activeCount = Math.round(lambda * patternOrder.length);
+  if (lambda > 0 && activeCount === 0) {
+    activeCount = 1;
+  }
   for (let i = 0; i < activeCount; i += 1) {
     table[patternOrder[i]] = 1;
   }
@@ -1124,6 +1140,10 @@ function updateRuleTables(lambda) {
 // --- λ sweep ---
 
 function getSweepLambdaAtStep(step) {
+  if (sweepMode === "manual") {
+    return manualLambda;
+  }
+
   const dur = Math.max(1, sweepDuration);
   if (sweepMode === "bounce") {
     const period = dur * 2;
@@ -1145,11 +1165,38 @@ function getSweepLambdaAtStep(step) {
 }
 
 function advanceSweep() {
+  if (sweepMode === "manual") {
+    updateRuleTables(manualLambda);
+    if (currentLambdaDisplayEl) {
+      currentLambdaDisplayEl.textContent = currentLambda.toFixed(3);
+    }
+    return;
+  }
+
   sweepStep += 1;
   updateRuleTables(getSweepLambdaAtStep(sweepStep));
   if (currentLambdaDisplayEl) {
     currentLambdaDisplayEl.textContent = currentLambda.toFixed(3);
   }
+}
+
+function setSweepControlEnabled(control, enabled) {
+  if (!control) {
+    return;
+  }
+
+  control.disabled = !enabled;
+  const wrapper = control.closest("label");
+  if (wrapper) {
+    wrapper.style.opacity = enabled ? "1" : "0.55";
+  }
+}
+
+function syncSweepModeUi() {
+  const manualMode = sweepMode === "manual";
+  setSweepControlEnabled(sweepStartInput, !manualMode);
+  setSweepControlEnabled(sweepEndInput, !manualMode);
+  setSweepControlEnabled(sweepDurationInput, !manualMode);
 }
 
 // --- CA transition ---
@@ -2542,6 +2589,19 @@ sweepEndInput.addEventListener("input", () => {
 
 sweepModeSelect.addEventListener("change", () => {
   sweepMode = sweepModeSelect.value;
+  syncSweepModeUi();
+  updateRuleTables(getSweepLambdaAtStep(sweepStep));
+  currentLambdaDisplayEl.textContent = currentLambda.toFixed(3);
+});
+
+manualLambdaInput.addEventListener("input", () => {
+  manualLambda = Number(manualLambdaInput.value);
+  manualLambdaLabel.textContent = manualLambda.toFixed(2);
+
+  if (sweepMode === "manual") {
+    updateRuleTables(manualLambda);
+    currentLambdaDisplayEl.textContent = currentLambda.toFixed(3);
+  }
 });
 
 sweepDurationInput.addEventListener("input", () => {
@@ -2558,9 +2618,11 @@ blockSizeInput.addEventListener("input", () => {
 
 sweepStartLabel.textContent = sweepStartLambda.toFixed(2);
 sweepEndLabel.textContent = sweepEndLambda.toFixed(2);
+manualLambdaLabel.textContent = manualLambda.toFixed(2);
 sweepDurationLabel.textContent = `${sweepDuration} steps`;
 volumeLabel.textContent = `${Number(volumeInput.value)}%`;
 speedLabel.textContent = `${getTempoBpm()} BPM`;
+syncSweepModeUi();
 setNeighborhoodSize(blockSizeInput.value);
 
 reseedRng(rngSeedInput.value);
