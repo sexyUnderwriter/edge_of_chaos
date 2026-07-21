@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Recorder Trio CA Generator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="hero">
+        <p class="eyebrow">Algorithmic Recorder Trio</p>
+        <h1>Partitioned Cellular Automaton Composer</h1>
+        <p class="lede">
+          Design a 15-cell seed (5-cell neighborhoods per player), evolve it in real time, and export valid Humdrum **kern for bass, tenor, and alto recorders.
+        </p>
+      </header>
+
+      <section class="panel" aria-labelledby="seed-heading">
+        <h2 id="seed-heading">Seed Grid</h2>
+        <p class="helper">Click a cell to toggle 0/1. The center cell in each 5-cell player block is that player gate output.</p>
+        <div id="seed-grid" class="seed-grid" role="grid" aria-label="Initial 15-cell seed"></div>
+        <div class="legend">
+          <div><span class="chip s0"></span> 0 Off</div>
+          <div><span class="chip s1"></span> 1 On / Gate Hit</div>
+        </div>
+      </section>
+
+      <section class="panel controls" aria-labelledby="controls-heading">
+        <h2 id="controls-heading">Simulation Controls</h2>
+        <div class="button-row">
+          <button id="step-btn" type="button">Step Forward</button>
+          <button id="play-btn" type="button">Play</button>
+          <button id="reset-btn" type="button">Reset to Seed</button>
+          <button id="kern-btn" type="button">Save KRN</button>
+          <button id="xml-btn" type="button">Save XML</button>
+          <button id="generate-xml-btn" type="button">Generate XML</button>
+          <button id="midi-btn" type="button">Download MIDI</button>
+          <button id="midi-preview-btn" type="button">Preview MIDI</button>
+          <button id="audio-btn" type="button">Audio: On</button>
+        </div>
+        <div class="seed-controls">
+          <label for="rng-seed-input">RNG Seed</label>
+          <input id="rng-seed-input" type="text" value="trio-001" spellcheck="false" />
+          <button id="rng-apply-btn" type="button">Apply Seed</button>
+          <button id="rng-generate-btn" type="button">Generate Seed</button>
+        </div>
+        <label class="speed" for="speed-input">
+          Tempo (BPM)
+          <input id="speed-input" type="range" min="40" max="240" step="1" value="143" />
+          <span id="speed-label">143 BPM</span>
+        </label>
+        <label class="speed" for="volume-input">
+          Volume
+          <input id="volume-input" type="range" min="50" max="400" step="5" value="220" />
+          <span id="volume-label">220%</span>
+        </label>
+        <label class="speed" for="lambda-input">
+          Global Entropy λ (sets all voices)
+          <input id="lambda-input" type="range" min="0" max="1" step="0.01" value="0.05" />
+          <span id="lambda-label">0.05</span>
+        </label>
+        <label class="speed" for="bass-lambda-input">
+          Bass λ
+          <input id="bass-lambda-input" type="range" min="0" max="1" step="0.01" value="0.05" />
+          <span id="bass-lambda-label">0.05</span>
+        </label>
+        <label class="speed" for="tenor-lambda-input">
+          Tenor λ
+          <input id="tenor-lambda-input" type="range" min="0" max="1" step="0.01" value="0.05" />
+          <span id="tenor-lambda-label">0.05</span>
+        </label>
+        <label class="speed" for="alto-lambda-input">
+          Alto λ
+          <input id="alto-lambda-input" type="range" min="0" max="1" step="0.01" value="0.05" />
+          <span id="alto-lambda-label">0.05</span>
+        </label>
+        <label class="speed" for="block-size-input">
+          Neighborhood Size (odd)
+          <input id="block-size-input" type="range" min="3" max="15" step="2" value="5" />
+          <span id="block-size-label">5 cells</span>
+        </label>
+      </section>
+
+      <section class="panel" aria-labelledby="history-heading">
+        <h2 id="history-heading">CA History</h2>
+        <p class="helper">Rows scroll downward as generations are added. A player advances to the next chord when its center gate cell becomes 1.</p>
+        <div id="history-grid" class="history-grid" aria-label="Cellular automaton history"></div>
+      </section>
+
+      <section class="panel" aria-labelledby="export-heading">
+        <h2 id="export-heading">Humdrum **kern Export</h2>
+        <textarea id="kern-output" readonly spellcheck="false" aria-label="Generated Humdrum kern output"></textarea>
+      </section>
+
+      <section class="panel" aria-labelledby="xml-export-heading">
+        <h2 id="xml-export-heading">MusicXML Export</h2>
+        <textarea id="xml-output" readonly spellcheck="false" aria-label="Generated MusicXML output"></textarea>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
