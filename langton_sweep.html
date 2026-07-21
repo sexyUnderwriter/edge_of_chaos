@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Recorder Trio CA Generator</title>
+    <title>Langton λ Sweep — Recorder Trio CA</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -16,9 +16,13 @@
     <main class="app-shell">
       <header class="hero">
         <p class="eyebrow">Algorithmic Recorder Trio</p>
-        <h1>Partitioned Cellular Automaton Composer</h1>
+        <h1>Langton λ Sweep — 1D CA Chord Transformer</h1>
         <p class="lede">
-          Design a 15-cell seed (5-cell neighborhoods per player), evolve it in real time, and export valid Humdrum **kern for bass, tenor, and alto recorders.
+          Sweep Langton's λ parameter from order (0) to chaos (1) — or any range, in any direction.
+          A deterministic 1D CA rule table is derived from λ at each step, transforming the Bach chord
+          progression from frozen silence through complex structure to full chaos as λ rises.
+          Each voice uses its own seeded rule ordering, so the three parts diverge and converge
+          as the sweep unfolds.
         </p>
       </header>
 
@@ -61,26 +65,33 @@
           <input id="volume-input" type="range" min="50" max="400" step="5" value="220" />
           <span id="volume-label">220%</span>
         </label>
-        <label class="speed" for="lambda-input">
-          Global Entropy λ (sets all voices)
-          <input id="lambda-input" type="range" min="0" max="1" step="0.01" value="0.05" />
-          <span id="lambda-label">0.05</span>
+        <label class="speed" for="sweep-start-input">
+          Sweep Start λ
+          <input id="sweep-start-input" type="range" min="0" max="1" step="0.01" value="0" />
+          <span id="sweep-start-label">0.00</span>
         </label>
-        <label class="speed" for="bass-lambda-input">
-          Bass λ
-          <input id="bass-lambda-input" type="range" min="0" max="1" step="0.01" value="0.05" />
-          <span id="bass-lambda-label">0.05</span>
+        <label class="speed" for="sweep-end-input">
+          Sweep End λ
+          <input id="sweep-end-input" type="range" min="0" max="1" step="0.01" value="1" />
+          <span id="sweep-end-label">1.00</span>
         </label>
-        <label class="speed" for="tenor-lambda-input">
-          Tenor λ
-          <input id="tenor-lambda-input" type="range" min="0" max="1" step="0.01" value="0.05" />
-          <span id="tenor-lambda-label">0.05</span>
+        <label class="speed" for="sweep-mode-select">
+          Sweep Mode
+          <select id="sweep-mode-select">
+            <option value="forward">Forward (start → end, hold)</option>
+            <option value="reverse">Reverse (end → start, hold)</option>
+            <option value="bounce">Bounce (start ↔ end, repeat)</option>
+            <option value="loop">Loop (start → end, reset)</option>
+          </select>
         </label>
-        <label class="speed" for="alto-lambda-input">
-          Alto λ
-          <input id="alto-lambda-input" type="range" min="0" max="1" step="0.01" value="0.05" />
-          <span id="alto-lambda-label">0.05</span>
+        <label class="speed" for="sweep-duration-input">
+          Sweep Duration (steps)
+          <input id="sweep-duration-input" type="range" min="4" max="512" step="4" value="96" />
+          <span id="sweep-duration-label">96 steps</span>
         </label>
+        <div class="speed">
+          Current λ: <strong id="current-lambda-display">0.000</strong>
+        </div>
         <label class="speed" for="block-size-input">
           Neighborhood Size (odd)
           <input id="block-size-input" type="range" min="3" max="15" step="2" value="5" />
@@ -105,6 +116,6 @@
       </section>
     </main>
 
-    <script src="app.js"></script>
+    <script src="langton_sweep.js"></script>
   </body>
 </html>

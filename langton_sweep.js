@@ -791,14 +791,14 @@ const speedInput = document.getElementById("speed-input");
 const speedLabel = document.getElementById("speed-label");
 const volumeInput = document.getElementById("volume-input");
 const volumeLabel = document.getElementById("volume-label");
-const lambdaInput = document.getElementById("lambda-input");
-const lambdaLabel = document.getElementById("lambda-label");
-const bassLambdaInput = document.getElementById("bass-lambda-input");
-const bassLambdaLabel = document.getElementById("bass-lambda-label");
-const tenorLambdaInput = document.getElementById("tenor-lambda-input");
-const tenorLambdaLabel = document.getElementById("tenor-lambda-label");
-const altoLambdaInput = document.getElementById("alto-lambda-input");
-const altoLambdaLabel = document.getElementById("alto-lambda-label");
+const sweepStartInput = document.getElementById("sweep-start-input");
+const sweepStartLabel = document.getElementById("sweep-start-label");
+const sweepEndInput = document.getElementById("sweep-end-input");
+const sweepEndLabel = document.getElementById("sweep-end-label");
+const sweepModeSelect = document.getElementById("sweep-mode-select");
+const sweepDurationInput = document.getElementById("sweep-duration-input");
+const sweepDurationLabel = document.getElementById("sweep-duration-label");
+const currentLambdaDisplayEl = document.getElementById("current-lambda-display");
 const blockSizeInput = document.getElementById("block-size-input");
 const blockSizeLabel = document.getElementById("block-size-label");
 
@@ -854,12 +854,18 @@ let playTimer = null;
 let midiPreviewTimer = null;
 let midiPreviewIndex = 0;
 let maxHistoryRows = 96;
-let lambda = Number(lambdaInput.value);
-let lambdaByVoice = [
-  Number(bassLambdaInput.value),
-  Number(tenorLambdaInput.value),
-  Number(altoLambdaInput.value),
+let sweepStartLambda = 0.0;
+let sweepEndLambda = 1.0;
+let sweepMode = "forward";
+let sweepDuration = 96;
+let sweepStep = 0;
+let patternOrders = [[], [], []];
+let ruleTables = [
+  new Array(8).fill(0),
+  new Array(8).fill(0),
+  new Array(8).fill(0),
 ];
+let currentLambda = 0.0;
 
 let audioEnabled = true;
 let audioCtx = null;
@@ -1023,6 +1029,12 @@ function createRestVoices() {
 
 function resetSimulationState() {
   reseedRng(rngSeedText);
+  initPatternOrders();
+  sweepStep = 0;
+  updateRuleTables(sweepStartLambda);
+  if (currentLambdaDisplayEl) {
+    currentLambdaDisplayEl.textContent = currentLambda.toFixed(3);
+  }
   if (seed.length !== getTotalCells()) {
     seed = createDefaultSeed();
   }
@@ -1070,37 +1082,99 @@ function getOutputCellIndex(playerIndex) {
   return blockStart(playerIndex * blockSize) + getOutputCellOffset();
 }
 
-function rule30(left, center, right) {
-  return (left ^ (center | right)) & 1;
+// --- Langton λ rule table ---
+// For a 2-state, radius-1 (3-cell neighbourhood) CA there are 8 possible
+// input patterns: 000..111 (indices 0-7).  Pattern 000 → 0 is fixed as the
+// quiescent state so that an all-zero grid stays dead.  λ controls how many
+// of the remaining 7 patterns map to 1.  The mapping is established by a
+// seeded shuffle of those 7 indices so that it is deterministic per RNG seed
+// yet arbitrary (not biased toward any particular rule).
+
+function buildPatternOrder(rng) {
+  const patterns = [1, 2, 3, 4, 5, 6, 7];
+  for (let i = patterns.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(rng() * (i + 1));
+    [patterns[i], patterns[j]] = [patterns[j], patterns[i]];
+  }
+  return patterns;
 }
 
-function nextStateForPlayerCount(state, lambdaByVoiceValue, playerCount, randomFn) {
+function buildRuleTable(lambda, patternOrder) {
+  const table = new Array(8).fill(0);
+  const kActive = Math.round(lambda * patternOrder.length);
+  for (let i = 0; i < kActive; i += 1) {
+    table[patternOrder[i]] = 1;
+  }
+  return table;
+}
+
+function applyRule(table, left, center, right) {
+  return table[(left << 2) | (center << 1) | right];
+}
+
+function initPatternOrders() {
+  patternOrders = PLAYER_NAMES.map(() => buildPatternOrder(random01));
+}
+
+function updateRuleTables(lambda) {
+  currentLambda = Math.max(0, Math.min(1, lambda));
+  ruleTables = patternOrders.map((order) => buildRuleTable(currentLambda, order));
+}
+
+// --- λ sweep ---
+
+function getSweepLambdaAtStep(step) {
+  const dur = Math.max(1, sweepDuration);
+  if (sweepMode === "bounce") {
+    const period = dur * 2;
+    const pos = step % period;
+    const t = pos < dur ? pos / dur : 2 - pos / dur;
+    return sweepStartLambda + t * (sweepEndLambda - sweepStartLambda);
+  }
+  if (sweepMode === "loop") {
+    const t = (step % dur) / dur;
+    return sweepStartLambda + t * (sweepEndLambda - sweepStartLambda);
+  }
+  if (sweepMode === "reverse") {
+    const t = Math.min(1, step / dur);
+    return sweepEndLambda + t * (sweepStartLambda - sweepEndLambda);
+  }
+  // "forward" (default)
+  const t = Math.min(1, step / dur);
+  return sweepStartLambda + t * (sweepEndLambda - sweepStartLambda);
+}
+
+function advanceSweep() {
+  sweepStep += 1;
+  updateRuleTables(getSweepLambdaAtStep(sweepStep));
+  if (currentLambdaDisplayEl) {
+    currentLambdaDisplayEl.textContent = currentLambda.toFixed(3);
+  }
+}
+
+// --- CA transition ---
+
+function nextStateForPlayerCount(state, ruleTbls, playerCount) {
   const totalCells = blockSize * playerCount;
   const next = Array(totalCells).fill(0);
 
   for (let block = 0; block < playerCount; block += 1) {
     const start = block * blockSize;
-    const localLambda = lambdaByVoiceValue[block] ?? lambda;
+    const table = ruleTbls[block];
 
     for (let i = 0; i < blockSize; i += 1) {
       const idx = start + i;
       const leftIdx = start + ((i - 1 + blockSize) % blockSize);
       const rightIdx = start + ((i + 1) % blockSize);
-      let value = rule30(state[leftIdx], state[idx], state[rightIdx]);
-
-      if (randomFn() < localLambda) {
-        value = value === 1 ? 0 : 1;
-      }
-
-      next[idx] = value;
+      next[idx] = applyRule(table, state[leftIdx], state[idx], state[rightIdx]);
     }
   }
 
   return next;
 }
 
-function nextState(state, lambdaByVoiceValue) {
-  return nextStateForPlayerCount(state, lambdaByVoiceValue, PLAYER_NAMES.length, random01);
+function nextState(state) {
+  return nextStateForPlayerCount(state, ruleTables, PLAYER_NAMES.length);
 }
 
 function advancePlayersFromCa(nextCaRow) {
@@ -1485,7 +1559,7 @@ function buildXmlPart(historyRows, voiceIndex, partId) {
 }
 
 function toMusicXml(historyRows) {
-  const title = "Recorder Trio CA - Player Gated";
+  const title = "Recorder Trio — Langton λ Sweep";
   const parts = [
     { id: "P1", name: "Alto Recorder" },
     { id: "P2", name: "Tenor Recorder" },
@@ -2198,7 +2272,8 @@ function generateFullPieceSilently() {
       continue;
     }
 
-    const nextCa = nextState(currentCaRow, lambdaByVoice);
+    advanceSweep();
+    const nextCa = nextState(currentCaRow);
     const { nextPlayers, voices, allFinished } = advancePlayersFromCa(nextCa);
     const prevVoices = voiceHistory[voiceHistory.length - 1];
 
@@ -2300,7 +2375,8 @@ function stepForward() {
     return;
   }
 
-  const nextCa = nextState(currentCaRow, lambdaByVoice);
+  advanceSweep();
+  const nextCa = nextState(currentCaRow);
   const { nextPlayers, voices, allFinished } = advancePlayersFromCa(nextCa);
 
   const prevVoices = voiceHistory[voiceHistory.length - 1];
@@ -2454,32 +2530,23 @@ volumeInput.addEventListener("input", () => {
   }
 });
 
-lambdaInput.addEventListener("input", () => {
-  lambda = Number(lambdaInput.value);
-  lambdaLabel.textContent = lambda.toFixed(2);
-
-  lambdaByVoice = [lambda, lambda, lambda];
-  bassLambdaInput.value = lambda.toFixed(2);
-  tenorLambdaInput.value = lambda.toFixed(2);
-  altoLambdaInput.value = lambda.toFixed(2);
-  bassLambdaLabel.textContent = lambda.toFixed(2);
-  tenorLambdaLabel.textContent = lambda.toFixed(2);
-  altoLambdaLabel.textContent = lambda.toFixed(2);
+sweepStartInput.addEventListener("input", () => {
+  sweepStartLambda = Number(sweepStartInput.value);
+  sweepStartLabel.textContent = sweepStartLambda.toFixed(2);
 });
 
-bassLambdaInput.addEventListener("input", () => {
-  lambdaByVoice[0] = Number(bassLambdaInput.value);
-  bassLambdaLabel.textContent = lambdaByVoice[0].toFixed(2);
+sweepEndInput.addEventListener("input", () => {
+  sweepEndLambda = Number(sweepEndInput.value);
+  sweepEndLabel.textContent = sweepEndLambda.toFixed(2);
 });
 
-tenorLambdaInput.addEventListener("input", () => {
-  lambdaByVoice[1] = Number(tenorLambdaInput.value);
-  tenorLambdaLabel.textContent = lambdaByVoice[1].toFixed(2);
+sweepModeSelect.addEventListener("change", () => {
+  sweepMode = sweepModeSelect.value;
 });
 
-altoLambdaInput.addEventListener("input", () => {
-  lambdaByVoice[2] = Number(altoLambdaInput.value);
-  altoLambdaLabel.textContent = lambdaByVoice[2].toFixed(2);
+sweepDurationInput.addEventListener("input", () => {
+  sweepDuration = Math.max(4, Number(sweepDurationInput.value));
+  sweepDurationLabel.textContent = `${sweepDuration} steps`;
 });
 
 blockSizeInput.addEventListener("input", () => {
@@ -2489,10 +2556,9 @@ blockSizeInput.addEventListener("input", () => {
   renderAll();
 });
 
-lambdaLabel.textContent = lambda.toFixed(2);
-bassLambdaLabel.textContent = lambdaByVoice[0].toFixed(2);
-tenorLambdaLabel.textContent = lambdaByVoice[1].toFixed(2);
-altoLambdaLabel.textContent = lambdaByVoice[2].toFixed(2);
+sweepStartLabel.textContent = sweepStartLambda.toFixed(2);
+sweepEndLabel.textContent = sweepEndLambda.toFixed(2);
+sweepDurationLabel.textContent = `${sweepDuration} steps`;
 volumeLabel.textContent = `${Number(volumeInput.value)}%`;
 speedLabel.textContent = `${getTempoBpm()} BPM`;
 setNeighborhoodSize(blockSizeInput.value);
