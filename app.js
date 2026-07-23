@@ -2,766 +2,7 @@ const DEFAULT_BLOCK_SIZE = 5;
 const PLAYER_NAMES = ["Bass", "Tenor", "Alto"];
 const MIDI_TPQ = 480;
 const MIDI_RECORDER_PROGRAM = 73;
-const FINAL_CHORD_HOLD_BEATS = 8;
-const NO_VALID_NOTE_DECAY_LIFE = 8;
-const BREATH_MAX_BEATS = 8;
-const BREATH_REST_BEATS = 0;
-
-// Prescribed note choices per chord step, extracted from wtc1p01.krn (Bach WTC I Prelude 1).
-const SCORE_CHORDS = [
-  [
-    "c",
-    "cc",
-    "g"
-  ],
-  [
-    "cc",
-    "e",
-    "ee",
-    "g"
-  ],
-  [
-    "c",
-    "cc",
-    "g"
-  ],
-  [
-    "cc",
-    "e",
-    "ee",
-    "g"
-  ],
-  [
-    "a",
-    "c",
-    "dd"
-  ],
-  [
-    "a",
-    "d",
-    "dd",
-    "ff"
-  ],
-  [
-    "a",
-    "c",
-    "dd"
-  ],
-  [
-    "a",
-    "d",
-    "dd",
-    "ff"
-  ],
-  [
-    "B",
-    "dd",
-    "g"
-  ],
-  [
-    "d",
-    "dd",
-    "ff",
-    "g"
-  ],
-  [
-    "B",
-    "dd",
-    "g"
-  ],
-  [
-    "d",
-    "dd",
-    "ff",
-    "g"
-  ],
-  [
-    "c",
-    "cc",
-    "g"
-  ],
-  [
-    "cc",
-    "e",
-    "ee",
-    "g"
-  ],
-  [
-    "c",
-    "cc",
-    "g"
-  ],
-  [
-    "cc",
-    "e",
-    "ee",
-    "g"
-  ],
-  [
-    "a",
-    "c",
-    "ee"
-  ],
-  [
-    "a",
-    "aa",
-    "e",
-    "ee"
-  ],
-  [
-    "a",
-    "c",
-    "ee"
-  ],
-  [
-    "a",
-    "aa",
-    "e",
-    "ee"
-  ],
-  [
-    "a",
-    "c",
-    "f#"
-  ],
-  [
-    "a",
-    "d",
-    "dd",
-    "f#"
-  ],
-  [
-    "a",
-    "c",
-    "f#"
-  ],
-  [
-    "a",
-    "d",
-    "dd",
-    "f#"
-  ],
-  [
-    "B",
-    "dd",
-    "g"
-  ],
-  [
-    "d",
-    "dd",
-    "g",
-    "gg"
-  ],
-  [
-    "B",
-    "dd",
-    "g"
-  ],
-  [
-    "d",
-    "dd",
-    "g",
-    "gg"
-  ],
-  [
-    "B",
-    "e",
-    "g"
-  ],
-  [
-    "c",
-    "cc",
-    "e",
-    "g"
-  ],
-  [
-    "B",
-    "e",
-    "g"
-  ],
-  [
-    "c",
-    "cc",
-    "e",
-    "g"
-  ],
-  [
-    "A",
-    "e",
-    "g"
-  ],
-  [
-    "c",
-    "cc",
-    "e",
-    "g"
-  ],
-  [
-    "A",
-    "e",
-    "g"
-  ],
-  [
-    "c",
-    "cc",
-    "e",
-    "g"
-  ],
-  [
-    "d",
-    "D",
-    "f#"
-  ],
-  [
-    "A",
-    "cc",
-    "d",
-    "f#"
-  ],
-  [
-    "d",
-    "D",
-    "f#"
-  ],
-  [
-    "A",
-    "cc",
-    "d",
-    "f#"
-  ],
-  [
-    "d",
-    "g",
-    "G"
-  ],
-  [
-    "b",
-    "B",
-    "d",
-    "g"
-  ],
-  [
-    "d",
-    "g",
-    "G"
-  ],
-  [
-    "b",
-    "B",
-    "d",
-    "g"
-  ],
-  [
-    "e",
-    "g",
-    "G"
-  ],
-  [
-    "B-",
-    "cc#",
-    "e",
-    "g"
-  ],
-  [
-    "e",
-    "g",
-    "G"
-  ],
-  [
-    "B-",
-    "cc#",
-    "e",
-    "g"
-  ],
-  [
-    "a",
-    "d",
-    "F"
-  ],
-  [
-    "a",
-    "A",
-    "d",
-    "dd"
-  ],
-  [
-    "a",
-    "d",
-    "F"
-  ],
-  [
-    "a",
-    "A",
-    "d",
-    "dd"
-  ],
-  [
-    "d",
-    "f",
-    "F"
-  ],
-  [
-    "A-",
-    "b",
-    "d",
-    "f"
-  ],
-  [
-    "d",
-    "f",
-    "F"
-  ],
-  [
-    "A-",
-    "b",
-    "d",
-    "f"
-  ],
-  [
-    "c",
-    "E",
-    "g"
-  ],
-  [
-    "c",
-    "cc",
-    "g",
-    "G"
-  ],
-  [
-    "c",
-    "E",
-    "g"
-  ],
-  [
-    "c",
-    "cc",
-    "g",
-    "G"
-  ],
-  [
-    "A",
-    "c",
-    "E"
-  ],
-  [
-    "A",
-    "c",
-    "f",
-    "F"
-  ],
-  [
-    "A",
-    "c",
-    "E"
-  ],
-  [
-    "A",
-    "c",
-    "f",
-    "F"
-  ],
-  [
-    "A",
-    "c",
-    "D"
-  ],
-  [
-    "A",
-    "c",
-    "f",
-    "F"
-  ],
-  [
-    "A",
-    "c",
-    "D"
-  ],
-  [
-    "A",
-    "c",
-    "f",
-    "F"
-  ],
-  [
-    "B",
-    "G",
-    "GG"
-  ],
-  [
-    "B",
-    "D",
-    "f",
-    "G"
-  ],
-  [
-    "B",
-    "G",
-    "GG"
-  ],
-  [
-    "B",
-    "D",
-    "f",
-    "G"
-  ],
-  [
-    "c",
-    "C",
-    "G"
-  ],
-  [
-    "c",
-    "e",
-    "E",
-    "G"
-  ],
-  [
-    "c",
-    "C",
-    "G"
-  ],
-  [
-    "c",
-    "e",
-    "E",
-    "G"
-  ],
-  [
-    "B-",
-    "c",
-    "C"
-  ],
-  [
-    "B-",
-    "c",
-    "e",
-    "G"
-  ],
-  [
-    "B-",
-    "c",
-    "C"
-  ],
-  [
-    "B-",
-    "c",
-    "e",
-    "G"
-  ],
-  [
-    "A",
-    "c",
-    "FF"
-  ],
-  [
-    "A",
-    "c",
-    "e",
-    "F"
-  ],
-  [
-    "A",
-    "c",
-    "FF"
-  ],
-  [
-    "A",
-    "c",
-    "e",
-    "F"
-  ],
-  [
-    "A",
-    "c",
-    "FF#"
-  ],
-  [
-    "A",
-    "c",
-    "C",
-    "e-"
-  ],
-  [
-    "A",
-    "c",
-    "FF#"
-  ],
-  [
-    "A",
-    "c",
-    "C",
-    "e-"
-  ],
-  [
-    "AA-",
-    "B",
-    "c"
-  ],
-  [
-    "B",
-    "c",
-    "d",
-    "F"
-  ],
-  [
-    "AA-",
-    "B",
-    "c"
-  ],
-  [
-    "B",
-    "c",
-    "d",
-    "F"
-  ],
-  [
-    "B",
-    "G",
-    "GG"
-  ],
-  [
-    "B",
-    "d",
-    "F",
-    "G"
-  ],
-  [
-    "B",
-    "G",
-    "GG"
-  ],
-  [
-    "B",
-    "d",
-    "F",
-    "G"
-  ],
-  [
-    "c",
-    "G",
-    "GG"
-  ],
-  [
-    "c",
-    "e",
-    "E",
-    "G"
-  ],
-  [
-    "c",
-    "G",
-    "GG"
-  ],
-  [
-    "c",
-    "e",
-    "E",
-    "G"
-  ],
-  [
-    "c",
-    "G",
-    "GG"
-  ],
-  [
-    "c",
-    "D",
-    "f",
-    "G"
-  ],
-  [
-    "c",
-    "G",
-    "GG"
-  ],
-  [
-    "c",
-    "D",
-    "f",
-    "G"
-  ],
-  [
-    "B",
-    "G",
-    "GG"
-  ],
-  [
-    "B",
-    "D",
-    "f",
-    "G"
-  ],
-  [
-    "B",
-    "G",
-    "GG"
-  ],
-  [
-    "B",
-    "D",
-    "f",
-    "G"
-  ],
-  [
-    "A",
-    "c",
-    "GG"
-  ],
-  [
-    "A",
-    "c",
-    "E-",
-    "f#"
-  ],
-  [
-    "A",
-    "c",
-    "GG"
-  ],
-  [
-    "A",
-    "c",
-    "E-",
-    "f#"
-  ],
-  [
-    "c",
-    "G",
-    "GG"
-  ],
-  [
-    "c",
-    "E",
-    "g",
-    "G"
-  ],
-  [
-    "c",
-    "G",
-    "GG"
-  ],
-  [
-    "c",
-    "E",
-    "g",
-    "G"
-  ],
-  [
-    "c",
-    "G",
-    "GG"
-  ],
-  [
-    "c",
-    "D",
-    "f",
-    "G"
-  ],
-  [
-    "c",
-    "G",
-    "GG"
-  ],
-  [
-    "c",
-    "D",
-    "f",
-    "G"
-  ],
-  [
-    "B",
-    "G",
-    "GG"
-  ],
-  [
-    "B",
-    "D",
-    "f",
-    "G"
-  ],
-  [
-    "B",
-    "G",
-    "GG"
-  ],
-  [
-    "B",
-    "D",
-    "f",
-    "G"
-  ],
-  [
-    "B-",
-    "CC",
-    "G"
-  ],
-  [
-    "B-",
-    "C",
-    "e",
-    "G"
-  ],
-  [
-    "B-",
-    "CC",
-    "G"
-  ],
-  [
-    "B-",
-    "C",
-    "e",
-    "G"
-  ],
-  [
-    "A",
-    "CC",
-    "F"
-  ],
-  [
-    "A",
-    "c",
-    "C",
-    "f"
-  ],
-  [
-    "A",
-    "c",
-    "F"
-  ],
-  [
-    "D",
-    "F"
-  ],
-  [
-    "b",
-    "CC",
-    "g"
-  ],
-  [
-    "b",
-    "BB",
-    "dd",
-    "ff"
-  ],
-  [
-    "b",
-    "dd",
-    "g"
-  ],
-  [
-    "d",
-    "e",
-    "f"
-  ],
-  [
-    "C",
-    "cc",
-    "CC",
-    "e",
-    "g"
-  ]
-];
+const MAX_HISTORY_ROWS = 640;
 
 const VOICE_MIDI_RANGES = [
   { min: 53, max: 74 }, // Bass recorder comfortable range: F3-D5
@@ -769,12 +10,17 @@ const VOICE_MIDI_RANGES = [
   { min: 65, max: 79 }, // Alto recorder comfortable range: F4-G5
 ];
 
-const BASS_OMIT_PITCHES = new Set(["C", "E"]);
+const DEFAULT_MELODY_TEXT = [
+  "F3 G3 A3 Bb3 A3 G3 F3 C4 D4 C4 A3 G3",
+  "C4 E4 F4 G4 A4 G4 F4 E4 D4 E4 F4 G4",
+  "F4 A4 G4 Bb4 C5 Bb4 A4 G4 F4 G4 A4 C5",
+];
 
-const seedGridEl = document.getElementById("seed-grid");
 const historyGridEl = document.getElementById("history-grid");
 const kernOutputEl = document.getElementById("kern-output");
 const xmlOutputEl = document.getElementById("xml-output");
+const markovDebugOutputEl = document.getElementById("markov-debug-output");
+
 const stepBtn = document.getElementById("step-btn");
 const playBtn = document.getElementById("play-btn");
 const resetBtn = document.getElementById("reset-btn");
@@ -784,13 +30,16 @@ const generateXmlBtn = document.getElementById("generate-xml-btn");
 const midiBtn = document.getElementById("midi-btn");
 const midiPreviewBtn = document.getElementById("midi-preview-btn");
 const audioBtn = document.getElementById("audio-btn");
+
 const rngSeedInput = document.getElementById("rng-seed-input");
 const rngApplyBtn = document.getElementById("rng-apply-btn");
 const rngGenerateBtn = document.getElementById("rng-generate-btn");
+
 const speedInput = document.getElementById("speed-input");
 const speedLabel = document.getElementById("speed-label");
 const volumeInput = document.getElementById("volume-input");
 const volumeLabel = document.getElementById("volume-label");
+
 const lambdaInput = document.getElementById("lambda-input");
 const lambdaLabel = document.getElementById("lambda-label");
 const bassLambdaInput = document.getElementById("bass-lambda-input");
@@ -799,10 +48,45 @@ const tenorLambdaInput = document.getElementById("tenor-lambda-input");
 const tenorLambdaLabel = document.getElementById("tenor-lambda-label");
 const altoLambdaInput = document.getElementById("alto-lambda-input");
 const altoLambdaLabel = document.getElementById("alto-lambda-label");
+
 const blockSizeInput = document.getElementById("block-size-input");
 const blockSizeLabel = document.getElementById("block-size-label");
 
+const bassMelodyInput = document.getElementById("bass-melody-input");
+const tenorMelodyInput = document.getElementById("tenor-melody-input");
+const altoMelodyInput = document.getElementById("alto-melody-input");
+const applyMelodiesBtn = document.getElementById("apply-melodies-btn");
+
+let playTimer = null;
+let midiPreviewTimer = null;
+let midiPreviewIndex = 0;
+
+let audioEnabled = true;
+let audioCtx = null;
+let masterGain = null;
+let outputCompressor = null;
+const voiceSynths = Array(PLAYER_NAMES.length).fill(null);
+
+let xmlCache = "";
+let xmlCacheDirty = true;
+
 let blockSize = DEFAULT_BLOCK_SIZE;
+let rngSeedText = "trio-001";
+let rngState = 0;
+
+let globalTemperatureControl = Number(lambdaInput.value);
+let voiceTemperativeControls = [
+  Number(bassLambdaInput.value),
+  Number(tenorLambdaInput.value),
+  Number(altoLambdaInput.value),
+];
+
+let sourceMelodies = [[], [], []];
+
+let voiceEngines = [];
+let voiceHistory = [];
+let activityHistory = [];
+let latestDebugByVoice = [];
 
 function normalizeBlockSize(value) {
   const parsed = Number(value);
@@ -818,57 +102,17 @@ function getTotalCells() {
   return blockSize * PLAYER_NAMES.length;
 }
 
-function getOutputCellOffset() {
-  return Math.floor(blockSize / 2);
+function getMasterGainLevel() {
+  const volumeScalar = Number(volumeInput.value) / 100;
+  return Math.min(0.9, 0.28 * volumeScalar);
 }
 
-function getBlockLabels() {
-  return PLAYER_NAMES.flatMap((name) => Array(blockSize).fill(name));
+function getMidiVelocity(isStrike) {
+  const volumeScalar = Number(volumeInput.value) / 100;
+  const baseVelocity = isStrike ? 94 : 82;
+  const velocity = Math.round(baseVelocity * volumeScalar);
+  return Math.max(1, Math.min(127, velocity));
 }
-
-function createDefaultSeed(size = blockSize) {
-  const cells = [];
-  const gateOffset = Math.floor(size / 2);
-  for (let player = 0; player < PLAYER_NAMES.length; player += 1) {
-    for (let i = 0; i < size; i += 1) {
-      cells.push(i === gateOffset ? 1 : 0);
-    }
-  }
-  return cells;
-}
-
-let seed = createDefaultSeed();
-let currentCaRow = [...seed];
-let caHistory = [[...currentCaRow]];
-let playerProgress = [];
-let voiceHistory = [];
-let finalPhase = {
-  active: false,
-  beatsElapsed: 0,
-  completed: false,
-};
-let xmlCache = "";
-let xmlCacheDirty = true;
-
-let playTimer = null;
-let midiPreviewTimer = null;
-let midiPreviewIndex = 0;
-let maxHistoryRows = 96;
-let lambda = Number(lambdaInput.value);
-let lambdaByVoice = [
-  Number(bassLambdaInput.value),
-  Number(tenorLambdaInput.value),
-  Number(altoLambdaInput.value),
-];
-
-let audioEnabled = true;
-let audioCtx = null;
-let masterGain = null;
-let outputCompressor = null;
-const voiceSynths = Array(PLAYER_NAMES.length).fill(null);
-
-let rngSeedText = "trio-001";
-let rngState = 0;
 
 function hashSeed(text) {
   let h = 1779033703 ^ text.length;
@@ -899,21 +143,6 @@ function random01() {
   return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
 }
 
-function createSeededRandom(seedText) {
-  let state = hashSeed(seedText);
-  return function seededRandom() {
-    state = (state + 0x6d2b79f5) >>> 0;
-    let t = state;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function makeGeneratedSeed() {
-  return `seed-${Date.now().toString(36)}-${Math.floor(Math.random() * 1e6).toString(36)}`;
-}
-
 function randomChoice(items) {
   if (!items || items.length === 0) {
     return null;
@@ -921,306 +150,592 @@ function randomChoice(items) {
   return items[Math.floor(random01() * items.length)];
 }
 
-function shiftPitchOctaveOnce(pitch, direction) {
-  const match = String(pitch || "").match(/^([A-Ga-g]+)([#\-xXn]*)$/);
+function weightedChoice(items, weights) {
+  if (!items || items.length === 0 || !weights || weights.length !== items.length) {
+    return null;
+  }
+
+  let total = 0;
+  for (const w of weights) {
+    total += Math.max(0, w);
+  }
+
+  if (total <= 0) {
+    return randomChoice(items);
+  }
+
+  let r = random01() * total;
+  for (let i = 0; i < items.length; i += 1) {
+    r -= Math.max(0, weights[i]);
+    if (r <= 0) {
+      return items[i];
+    }
+  }
+
+  return items[items.length - 1];
+}
+
+function makeGeneratedSeed() {
+  return `seed-${Date.now().toString(36)}-${Math.floor(Math.random() * 1e6).toString(36)}`;
+}
+
+function clampMidi(midi, range) {
+  return Math.max(range.min, Math.min(range.max, midi));
+}
+
+function parseScientificNote(token) {
+  const match = String(token || "").trim().match(/^([A-Ga-g])([#b]{0,2})(-?\d+)$/);
   if (!match) {
     return null;
   }
 
-  let letters = match[1];
+  const letter = match[1].toUpperCase();
   const accidental = match[2] || "";
-  const isLower = letters[0] >= "a" && letters[0] <= "z";
+  const octave = Number(match[3]);
 
-  if (direction > 0) {
-    if (isLower) {
-      letters += letters[0];
-    } else if (letters.length > 1) {
-      letters = letters.slice(1);
-    } else {
-      letters = letters.toLowerCase();
-    }
-  } else if (direction < 0) {
-    if (!isLower) {
-      letters = letters[0] + letters;
-    } else if (letters.length > 1) {
-      letters = letters.slice(1);
-    } else {
-      letters = letters.toUpperCase();
+  const base = {
+    C: 0,
+    D: 2,
+    E: 4,
+    F: 5,
+    G: 7,
+    A: 9,
+    B: 11,
+  }[letter];
+
+  if (base === undefined || !Number.isFinite(octave)) {
+    return null;
+  }
+
+  let offset = 0;
+  for (const ch of accidental) {
+    if (ch === "#") {
+      offset += 1;
+    } else if (ch === "b") {
+      offset -= 1;
     }
   }
 
-  return `${letters}${accidental}`;
+  const midi = 12 * (octave + 1) + base + offset;
+  if (midi < 0 || midi > 127) {
+    return null;
+  }
+
+  return midi;
 }
 
-function shiftPitchByOctaves(pitch, octaves) {
-  let out = pitch;
-  const dir = octaves >= 0 ? 1 : -1;
-  for (let i = 0; i < Math.abs(octaves); i += 1) {
-    out = shiftPitchOctaveOnce(out, dir);
-    if (!out) {
-      return null;
+function parseHumdrumLikePitch(token) {
+  const cleaned = String(token || "").replace(/[^A-Ga-g#\-xXn]/g, "");
+  const letterMatch = cleaned.match(/[A-Ga-g]+/);
+  if (!letterMatch) {
+    return null;
+  }
+
+  const letters = letterMatch[0];
+  const accidentalPart = cleaned.slice(letters.length);
+  const letter = letters[0];
+  const repeats = letters.length;
+
+  const lowerBase = {
+    c: 60,
+    d: 62,
+    e: 64,
+    f: 65,
+    g: 67,
+    a: 69,
+    b: 71,
+  };
+
+  const upperBase = {
+    C: 48,
+    D: 50,
+    E: 52,
+    F: 53,
+    G: 55,
+    A: 57,
+    B: 59,
+  };
+
+  let midi = null;
+  if (letter >= "a" && letter <= "z") {
+    midi = lowerBase[letter] + 12 * (repeats - 1);
+  } else {
+    midi = upperBase[letter] - 12 * (repeats - 1);
+  }
+
+  if (midi === null || midi === undefined || Number.isNaN(midi)) {
+    return null;
+  }
+
+  let accidental = 0;
+  const naturalized = accidentalPart.includes("n");
+  if (!naturalized) {
+    for (const ch of accidentalPart) {
+      if (ch === "#") {
+        accidental += 1;
+      } else if (ch === "x" || ch === "X") {
+        accidental += 2;
+      } else if (ch === "-") {
+        accidental -= 1;
+      }
     }
   }
+
+  midi += accidental;
+  if (midi < 0 || midi > 127) {
+    return null;
+  }
+
+  return midi;
+}
+
+function parsePitchTokenToMidi(token) {
+  const trimmed = String(token || "").trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  // Accept common rest spellings: r, r4, r8., 4r, 16r..
+  if (/^r(\d+)?(\.*)?$/i.test(trimmed) || /^(\d+)r(\.*)?$/i.test(trimmed)) {
+    return null;
+  }
+
+  const scientific = parseScientificNote(trimmed);
+  if (scientific !== null) {
+    return scientific;
+  }
+
+  return parseHumdrumLikePitch(trimmed);
+}
+
+function parseMelodyText(text, range) {
+  const tokens = String(text || "")
+    .trim()
+    .split(/[\s,|;]+/)
+    .filter(Boolean);
+
+  const out = [];
+  for (const token of tokens) {
+    const trimmed = String(token || "").trim();
+    const isRest = /^r(\d+)?(\.*)?$/i.test(trimmed) || /^(\d+)r(\.*)?$/i.test(trimmed);
+    if (isRest) {
+      out.push(null);
+      continue;
+    }
+
+    const midi = parsePitchTokenToMidi(token);
+    if (midi === null) {
+      continue;
+    }
+    out.push(clampMidi(midi, range));
+  }
+
   return out;
 }
 
-function getChordChoicesForVoice(chord, voiceIndex) {
+function midiToFrequency(midi) {
+  return 440 * (2 ** ((midi - 69) / 12));
+}
+
+function midiToKernPitch(midi) {
+  const names = [
+    ["c", "C"],
+    ["c#", "C#"],
+    ["d", "D"],
+    ["d#", "D#"],
+    ["e", "E"],
+    ["f", "F"],
+    ["f#", "F#"],
+    ["g", "G"],
+    ["g#", "G#"],
+    ["a", "A"],
+    ["a#", "A#"],
+    ["b", "B"],
+  ];
+
+  const pc = ((midi % 12) + 12) % 12;
+  const octave = Math.floor(midi / 12) - 1;
+
+  if (octave >= 4) {
+    const repeats = octave - 3;
+    const lower = names[pc][0];
+    return lower[0].repeat(Math.max(1, repeats)) + lower.slice(1);
+  }
+
+  const repeats = 3 - octave;
+  const upper = names[pc][1];
+  return upper[0].repeat(Math.max(1, repeats)) + upper.slice(1);
+}
+
+function midiToXmlParts(midi) {
+  const names = [
+    { step: "C", alter: 0 },
+    { step: "C", alter: 1 },
+    { step: "D", alter: 0 },
+    { step: "D", alter: 1 },
+    { step: "E", alter: 0 },
+    { step: "F", alter: 0 },
+    { step: "F", alter: 1 },
+    { step: "G", alter: 0 },
+    { step: "G", alter: 1 },
+    { step: "A", alter: 0 },
+    { step: "A", alter: 1 },
+    { step: "B", alter: 0 },
+  ];
+
+  const pc = ((midi % 12) + 12) % 12;
+  const octave = Math.floor(midi / 12) - 1;
+  return { step: names[pc].step, alter: names[pc].alter, octave };
+}
+
+function buildTransitionModel(melody) {
+  const transitions = new Map();
+  const counts = new Map();
+
+  if (melody.length === 0) {
+    return { transitions, counts };
+  }
+
+  for (let i = 0; i < melody.length; i += 1) {
+    const curr = melody[i];
+    const next = melody[(i + 1) % melody.length];
+
+    if (!transitions.has(curr)) {
+      transitions.set(curr, new Map());
+    }
+
+    const row = transitions.get(curr);
+    row.set(next, (row.get(next) || 0) + 1);
+    counts.set(curr, (counts.get(curr) || 0) + 1);
+  }
+
+  return { transitions, counts };
+}
+
+function meanMidi(melody) {
+  if (!melody || melody.length === 0) {
+    return null;
+  }
+
+  const notes = melody.filter((m) => Number.isFinite(m));
+  if (notes.length === 0) {
+    return null;
+  }
+
+  return notes.reduce((sum, m) => sum + m, 0) / notes.length;
+}
+
+function getGlobalTemperature() {
+  return Math.max(0.2, Number(globalTemperatureControl) || 1);
+}
+
+function getTemperativeScale(controlValue) {
+  // Control range 0..1 mapped to 0.55..1.75 interval expansion/compression.
+  return 0.55 + controlValue * 1.2;
+}
+
+function createVoiceEngine(voiceIndex, melody) {
   const range = VOICE_MIDI_RANGES[voiceIndex];
-  if (!Array.isArray(chord) || !range) {
-    return [];
-  }
+  const clampedMelody = melody.map((m) => (Number.isFinite(m) ? clampMidi(m, range) : null));
+  const uniquePitchClasses = new Set(
+    clampedMelody.filter((m) => Number.isFinite(m)).map((m) => ((m % 12) + 12) % 12),
+  );
 
-  // Literal mode: only pitches explicitly present in the source chord token set.
-  const choices = chord.filter((candidate) => {
-    if (voiceIndex === 0 && BASS_OMIT_PITCHES.has(candidate)) {
-      return false;
-    }
+  const { transitions, counts } = buildTransitionModel(clampedMelody);
+  const anchor = meanMidi(clampedMelody);
 
-    const midi = pitchToMidi(candidate);
-    if (midi === null) {
-      return false;
-    }
-
-    return midi >= range.min && midi <= range.max;
-  });
-
-  return [...new Set(choices)].sort((a, b) => pitchToMidi(a) - pitchToMidi(b));
+  return {
+    voiceIndex,
+    range,
+    melody: clampedMelody,
+    pitchClasses: uniquePitchClasses,
+    transitions,
+    counts,
+    anchor,
+    currentMidi: clampedMelody.length > 0 ? clampedMelody[0] : null,
+  };
 }
 
-function choosePitchForVoice(chord, voiceIndex, fallbackPitch = null) {
-  const choices = getChordChoicesForVoice(chord, voiceIndex);
-  if (choices.length === 0) {
-    return fallbackPitch;
+function nearestAllowedByPitchClass(targetMidi, range, allowedPitchClasses) {
+  if (!allowedPitchClasses || allowedPitchClasses.size === 0) {
+    return clampMidi(Math.round(targetMidi), range);
   }
 
-  return randomChoice(choices);
+  let best = null;
+  let bestDistance = Number.POSITIVE_INFINITY;
+
+  for (let midi = range.min; midi <= range.max; midi += 1) {
+    const pc = ((midi % 12) + 12) % 12;
+    if (!allowedPitchClasses.has(pc)) {
+      continue;
+    }
+
+    const distance = Math.abs(midi - targetMidi);
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      best = midi;
+    }
+  }
+
+  if (best === null) {
+    return clampMidi(Math.round(targetMidi), range);
+  }
+
+  return best;
 }
 
-function createInitialPlayers() {
-  const firstChord = SCORE_CHORDS[0];
-  return PLAYER_NAMES.map((_, voiceIndex) => {
-    const pitch = choosePitchForVoice(firstChord, voiceIndex);
+function chooseMarkovNext(engine, temperature) {
+  if (!engine.melody || engine.melody.length === 0) {
     return {
-      chordIndex: 0,
-      pitch,
-      decayRemaining: NO_VALID_NOTE_DECAY_LIFE,
-      breathBeats: pitch ? 1 : 0,
-      forcedRestRemaining: 0,
+      candidate: null,
+      debug: {
+        hasRow: false,
+        reason: "empty-melody",
+        current: engine.currentMidi,
+        candidates: [],
+        baseProbabilities: [],
+        adjustedProbabilities: [],
+        temperature,
+      },
     };
-  });
+  }
+
+  const current = engine.currentMidi;
+  const row = engine.transitions.get(current);
+
+  if (!row || row.size === 0) {
+    return {
+      candidate: randomChoice(engine.melody),
+      debug: {
+        hasRow: false,
+        reason: "no-outgoing-row",
+        current,
+        candidates: [],
+        baseProbabilities: [],
+        adjustedProbabilities: [],
+        temperature,
+      },
+    };
+  }
+
+  const rowTotal = Array.from(row.values()).reduce((sum, count) => sum + count, 0);
+  if (rowTotal <= 0) {
+    return {
+      candidate: randomChoice(engine.melody),
+      debug: {
+        hasRow: false,
+        reason: "zero-row-total",
+        current,
+        candidates: [],
+        baseProbabilities: [],
+        adjustedProbabilities: [],
+        temperature,
+      },
+    };
+  }
+
+  const candidates = [];
+  const baseProbabilities = [];
+  const adjustedWeights = [];
+  const safeTemperature = Math.max(0.2, temperature);
+
+  for (const [next, count] of row.entries()) {
+    candidates.push(next);
+
+    // Method 2 (temperature scaling): P'(j|i) proportional to P(j|i)^(1/T)
+    const probability = count / rowTotal;
+    const scaledWeight = Math.pow(probability, 1 / safeTemperature);
+    baseProbabilities.push(probability);
+    adjustedWeights.push(scaledWeight);
+  }
+
+  const weightTotal = adjustedWeights.reduce((sum, w) => sum + w, 0);
+  const adjustedProbabilities = adjustedWeights.map((w) => (weightTotal > 0 ? w / weightTotal : 0));
+
+  return {
+    candidate: weightedChoice(candidates, adjustedWeights),
+    debug: {
+      hasRow: true,
+      reason: "ok",
+      current,
+      candidates,
+      baseProbabilities,
+      adjustedProbabilities,
+      temperature: safeTemperature,
+    },
+  };
 }
 
-function snapshotVoices(players, strikeAll = false) {
-  return players.map((player) => ({
-    state: strikeAll ? 2 : 1,
-    pitch: player.pitch,
+function applyTemperativeScaling(engine, candidateMidi, temperativeScale) {
+  if (candidateMidi === null) {
+    return null;
+  }
+
+  const anchor = engine.anchor ?? candidateMidi;
+  const morphed = anchor + (candidateMidi - anchor) * temperativeScale;
+  return nearestAllowedByPitchClass(morphed, engine.range, engine.pitchClasses);
+}
+
+function stepVoice(engine, voiceIndex) {
+  const temperature = getGlobalTemperature();
+  const temperativeScale = getTemperativeScale(voiceTemperativeControls[voiceIndex]);
+
+  const nextChoice = chooseMarkovNext(engine, temperature);
+  const candidate = nextChoice.candidate;
+  const morphed = applyTemperativeScaling(engine, candidate, temperativeScale);
+
+  if (morphed === null) {
+    engine.currentMidi = null;
+    latestDebugByVoice[voiceIndex] = {
+      ...nextChoice.debug,
+      candidate,
+      morphed,
+      temperativeScale,
+      state: 0,
+    };
+    return { state: 0, midi: null };
+  }
+
+  const same = engine.currentMidi !== null && morphed === engine.currentMidi;
+  engine.currentMidi = morphed;
+
+  latestDebugByVoice[voiceIndex] = {
+    ...nextChoice.debug,
+    candidate,
+    morphed,
+    temperativeScale,
+    state: same ? 1 : 2,
+  };
+
+  return {
+    state: same ? 1 : 2,
+    midi: morphed,
+  };
+}
+
+function debugPitchLabel(midi) {
+  if (midi === null || midi === undefined || !Number.isFinite(midi)) {
+    return "rest";
+  }
+  return `${midiToKernPitch(midi)} (${midi})`;
+}
+
+function renderMarkovDebug() {
+  if (!markovDebugOutputEl) {
+    return;
+  }
+
+  const order = [
+    { label: "Alto", index: 2 },
+    { label: "Tenor", index: 1 },
+    { label: "Bass", index: 0 },
+  ];
+
+  const lines = [];
+  for (const voice of order) {
+    const debug = latestDebugByVoice[voice.index];
+    if (!debug) {
+      lines.push(`${voice.label}: no data yet`);
+      lines.push("");
+      continue;
+    }
+
+    lines.push(`${voice.label} | current: ${debugPitchLabel(debug.current)} | candidate: ${debugPitchLabel(debug.candidate)} | morphed: ${debugPitchLabel(debug.morphed)} | state: ${debug.state}`);
+    lines.push(`  T=${Number(debug.temperature).toFixed(2)}  scale=${Number(debug.temperativeScale).toFixed(2)}  row=${debug.reason}`);
+
+    if (debug.hasRow && debug.candidates.length > 0) {
+      for (let i = 0; i < debug.candidates.length; i += 1) {
+        const note = debugPitchLabel(debug.candidates[i]);
+        const base = (debug.baseProbabilities[i] * 100).toFixed(1);
+        const adjusted = (debug.adjustedProbabilities[i] * 100).toFixed(1);
+        lines.push(`    ${note}: base ${base}% -> adjusted ${adjusted}%`);
+      }
+    } else {
+      lines.push("    No outgoing transition row for this current state; using fallback random choice.");
+    }
+
+    lines.push("");
+  }
+
+  markovDebugOutputEl.textContent = lines.join("\n").trim();
+}
+
+function createInitialRow() {
+  return voiceEngines.map((engine) => ({
+    state: engine.currentMidi === null ? 0 : 2,
+    midi: engine.currentMidi,
   }));
 }
 
-function createRestVoices() {
-  return PLAYER_NAMES.map(() => ({ state: 0, pitch: null }));
-}
-
-function resetSimulationState() {
-  reseedRng(rngSeedText);
-  if (seed.length !== getTotalCells()) {
-    seed = createDefaultSeed();
-  }
-  currentCaRow = [...seed];
-  caHistory = [[...currentCaRow]];
-  playerProgress = createInitialPlayers();
-  voiceHistory = [snapshotVoices(playerProgress, true)];
-  finalPhase = {
-    active: false,
-    beatsElapsed: 0,
-    completed: false,
-  };
-
-  invalidateXmlCache();
-}
-
-function getVolumeScalar() {
-  return Number(volumeInput.value) / 100;
-}
-
-function getMasterGainLevel() {
-  return Math.min(0.9, 0.28 * getVolumeScalar());
-}
-
-function getMidiVelocity(isStrike) {
-  const baseVelocity = isStrike ? 94 : 82;
-  const velocity = Math.round(baseVelocity * getVolumeScalar());
-  return Math.max(1, Math.min(127, velocity));
-}
-
-function getTempoBpm() {
-  return Number(speedInput.value);
-}
-
-function getStepDurationMs() {
-  const bpm = Math.max(1, getTempoBpm());
-  return Math.round(60000 / bpm);
-}
-
-function blockStart(index) {
-  return Math.floor(index / blockSize) * blockSize;
-}
-
-function getOutputCellIndex(playerIndex) {
-  return blockStart(playerIndex * blockSize) + getOutputCellOffset();
-}
-
-function rule30(left, center, right) {
-  return (left ^ (center | right)) & 1;
-}
-
-function nextStateForPlayerCount(state, lambdaByVoiceValue, playerCount, randomFn) {
-  const totalCells = blockSize * playerCount;
-  const next = Array(totalCells).fill(0);
-
-  for (let block = 0; block < playerCount; block += 1) {
-    const start = block * blockSize;
-    const localLambda = lambdaByVoiceValue[block] ?? lambda;
-
-    for (let i = 0; i < blockSize; i += 1) {
-      const idx = start + i;
-      const leftIdx = start + ((i - 1 + blockSize) % blockSize);
-      const rightIdx = start + ((i + 1) % blockSize);
-      let value = rule30(state[leftIdx], state[idx], state[rightIdx]);
-
-      if (randomFn() < localLambda) {
-        value = value === 1 ? 0 : 1;
-      }
-
-      next[idx] = value;
-    }
-  }
-
-  return next;
-}
-
-function nextState(state, lambdaByVoiceValue) {
-  return nextStateForPlayerCount(state, lambdaByVoiceValue, PLAYER_NAMES.length, random01);
-}
-
-function advancePlayersFromCa(nextCaRow) {
-  const lastChordIndex = SCORE_CHORDS.length - 1;
-  const nextPlayers = playerProgress.map((player) => ({ ...player }));
-  const voices = [];
+function voicesToActivityRow(voices) {
+  const row = Array(getTotalCells()).fill(0);
 
   for (let voice = 0; voice < PLAYER_NAMES.length; voice += 1) {
-    const outputCell = getOutputCellIndex(voice);
-    const hit = nextCaRow[outputCell] === 1;
-    const player = nextPlayers[voice];
-    let state = 1;
-    let advanced = false;
+    const start = voice * blockSize;
+    const state = voices[voice];
 
-    if (hit && player.chordIndex < lastChordIndex) {
-      player.chordIndex += 1;
-      advanced = true;
-    }
-
-    if ((player.forcedRestRemaining ?? 0) > 0) {
-      player.forcedRestRemaining -= 1;
-      player.pitch = null;
-      player.decayRemaining = 0;
-      player.breathBeats = 0;
-      voices.push({ state: 0, pitch: null });
+    if (!state || state.state === 0 || state.midi === null) {
       continue;
     }
 
-    if (player.pitch && (player.breathBeats ?? 0) >= BREATH_MAX_BEATS) {
-      player.pitch = null;
-      player.decayRemaining = 0;
-      player.breathBeats = 0;
-      player.forcedRestRemaining = Math.max(0, BREATH_REST_BEATS - 1);
-      voices.push({ state: 0, pitch: null });
-      continue;
-    }
-
-    const currentChord = SCORE_CHORDS[player.chordIndex];
-    const choices = getChordChoicesForVoice(currentChord, voice);
-
-    if (advanced && choices.length > 0) {
-      const nextPitch = randomChoice(choices);
-      const samePitch = Boolean(player.pitch && nextPitch === player.pitch);
-      player.pitch = nextPitch;
-      player.decayRemaining = NO_VALID_NOTE_DECAY_LIFE;
-      player.breathBeats = samePitch ? (player.breathBeats ?? 0) + 1 : (player.pitch ? 1 : 0);
-      player.forcedRestRemaining = 0;
-      state = samePitch ? 1 : 2;
-    } else if (choices.length === 0) {
-      if (player.pitch && (player.decayRemaining ?? NO_VALID_NOTE_DECAY_LIFE) > 0) {
-        player.decayRemaining = (player.decayRemaining ?? NO_VALID_NOTE_DECAY_LIFE) - 1;
-        player.breathBeats = (player.breathBeats ?? 0) + 1;
-        player.forcedRestRemaining = 0;
-        state = 1;
-      } else {
-        player.pitch = null;
-        player.decayRemaining = 0;
-        player.breathBeats = 0;
-        player.forcedRestRemaining = 0;
-        state = 0;
-      }
-    } else {
-      if (!player.pitch) {
-        player.pitch = randomChoice(choices);
-        player.breathBeats = 1;
-        state = 2;
-      } else {
-        player.breathBeats = (player.breathBeats ?? 0) + 1;
-      }
-      player.decayRemaining = NO_VALID_NOTE_DECAY_LIFE;
-      player.forcedRestRemaining = 0;
-    }
-
-    voices.push({ state, pitch: player.pitch });
+    const range = VOICE_MIDI_RANGES[voice];
+    const span = Math.max(1, range.max - range.min);
+    const normalized = (state.midi - range.min) / span;
+    const lane = Math.max(0, Math.min(blockSize - 1, Math.round(normalized * (blockSize - 1))));
+    row[start + lane] = state.state === 2 ? 2 : 1;
   }
 
-  const allFinished = nextPlayers.every((player) => player.chordIndex >= lastChordIndex);
-
-  return {
-    nextPlayers,
-    voices,
-    allFinished,
-  };
+  return row;
 }
 
-function toKernPitchToken(pitch) {
-  return pitch;
+function invalidateXmlCache() {
+  xmlCacheDirty = true;
+  if (xmlOutputEl) {
+    xmlOutputEl.value = "XML reflects the current generated rows. Click Save XML to export.";
+  }
+}
+
+function escapeXml(text) {
+  return String(text)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&apos;");
 }
 
 function voiceToken(historyRows, rowIndex, voiceIndex) {
-  const currentVoice = historyRows[rowIndex][voiceIndex];
-  if (currentVoice.state === 0 || !currentVoice.pitch) {
+  const current = historyRows[rowIndex][voiceIndex];
+  if (!current || current.state === 0 || current.midi === null) {
     return "4r";
   }
 
-  const currentPitch = currentVoice.pitch;
+  const currentMidi = current.midi;
+  const prev = rowIndex > 0 ? historyRows[rowIndex - 1][voiceIndex] : null;
+  const next = rowIndex + 1 < historyRows.length ? historyRows[rowIndex + 1][voiceIndex] : null;
 
-  const prevVoice = rowIndex > 0 ? historyRows[rowIndex - 1][voiceIndex] : null;
-  const nextVoice = rowIndex + 1 < historyRows.length ? historyRows[rowIndex + 1][voiceIndex] : null;
+  const prevSame = Boolean(prev && prev.state !== 0 && prev.midi === currentMidi);
+  const nextSame = Boolean(next && next.state !== 0 && next.midi === currentMidi);
 
-  const prevSame = prevVoice !== null && prevVoice.pitch === currentPitch;
-  const nextSame = nextVoice !== null && nextVoice.pitch === currentPitch;
+  const pitch = midiToKernPitch(currentMidi);
 
-  if (currentVoice.state === 2) {
-    return nextSame ? `[4${toKernPitchToken(currentPitch)}` : `4${toKernPitchToken(currentPitch)}`;
+  if (current.state === 2) {
+    return nextSame ? `[4${pitch}` : `4${pitch}`;
   }
 
   if (prevSame && nextSame) {
-    return `4${toKernPitchToken(currentPitch)}_`;
+    return `4${pitch}_`;
   }
 
   if (prevSame && !nextSame) {
-    return `4${toKernPitchToken(currentPitch)}]`;
+    return `4${pitch}]`;
   }
 
   if (!prevSame && nextSame) {
-    return `[4${toKernPitchToken(currentPitch)}`;
+    return `[4${pitch}`;
   }
 
-  return `4${toKernPitchToken(currentPitch)}`;
+  return `4${pitch}`;
 }
 
 function toKern(historyRows) {
@@ -1248,89 +763,24 @@ function toKern(historyRows) {
   return lines.join("\n");
 }
 
-function pitchToXmlParts(pitch) {
-  const cleaned = String(pitch || "").replace(/[^A-Ga-g#\-xXn]/g, "");
-  const letterMatch = cleaned.match(/[A-Ga-g]+/);
-  if (!letterMatch) {
-    return null;
-  }
-
-  const letters = letterMatch[0];
-  const accidentalPart = cleaned.slice(letters.length);
-  const letter = letters[0];
-  const repeats = letters.length;
-
-  const step = letter.toUpperCase();
-  let octave = 4;
-  if (letter >= "a" && letter <= "z") {
-    octave = 4 + (repeats - 1);
-  } else {
-    octave = 3 - (repeats - 1);
-  }
-
-  let alter = 0;
-  if (!accidentalPart.includes("n")) {
-    for (const ch of accidentalPart) {
-      if (ch === "#") {
-        alter += 1;
-      } else if (ch === "x" || ch === "X") {
-        alter += 2;
-      } else if (ch === "-") {
-        alter -= 1;
-      }
-    }
-  }
-
-  return { step, alter, octave };
-}
-
-function xmlTieState(historyRows, rowIndex, voiceIndex) {
-  const current = historyRows[rowIndex][voiceIndex];
-  if (!current.pitch || current.state === 0) {
-    return { starts: false, stops: false };
-  }
-
-  const prev = rowIndex > 0 ? historyRows[rowIndex - 1][voiceIndex] : null;
-  const next = rowIndex + 1 < historyRows.length ? historyRows[rowIndex + 1][voiceIndex] : null;
-  const prevSame = prev && prev.state !== 0 && prev.pitch === current.pitch;
-  const nextSame = next && next.state !== 0 && next.pitch === current.pitch;
-
-  return {
-    starts: Boolean(nextSame),
-    stops: Boolean(prevSame),
-  };
-}
-
 function xmlDurationSpec(duration) {
   if (duration === 4) {
     return { type: "whole", dots: 0 };
   }
-
   if (duration === 3) {
     return { type: "half", dots: 1 };
   }
-
   if (duration === 2) {
     return { type: "half", dots: 0 };
   }
-
   return { type: "quarter", dots: 0 };
-}
-
-function escapeXml(text) {
-  return String(text)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/\"/g, "&quot;")
-    .replace(/'/g, "&apos;");
 }
 
 function buildXmlNote(noteEvent) {
   const duration = Math.max(1, noteEvent.duration);
   const durationInfo = xmlDurationSpec(duration);
 
-  if (noteEvent.isRest || !noteEvent.pitch) {
+  if (noteEvent.isRest || noteEvent.midi === null) {
     const lines = [
       "      <note>",
       "        <rest/>",
@@ -1346,17 +796,7 @@ function buildXmlNote(noteEvent) {
     return lines.join("\n");
   }
 
-  const xmlPitch = pitchToXmlParts(noteEvent.pitch);
-  if (!xmlPitch) {
-    return [
-      "      <note>",
-      "        <rest/>",
-      `        <duration>${duration}</duration>`,
-      `        <type>${durationInfo.type}</type>`,
-      "      </note>",
-    ].join("\n");
-  }
-
+  const xmlPitch = midiToXmlParts(noteEvent.midi);
   const lines = [
     "      <note>",
     "        <pitch>",
@@ -1425,12 +865,12 @@ function buildXmlPart(historyRows, voiceIndex, partId) {
       const rowIndex = i + beat;
 
       if (rowIndex >= historyRows.length) {
-        lines.push(buildXmlNote({ isRest: true, pitch: null, duration: 4 - beat }));
+        lines.push(buildXmlNote({ isRest: true, midi: null, duration: 4 - beat }));
         break;
       }
 
       const currentVoice = historyRows[rowIndex][voiceIndex];
-      const isRest = currentVoice.state === 0 || !currentVoice.pitch;
+      const isRest = !currentVoice || currentVoice.state === 0 || currentVoice.midi === null;
       let runLength = 1;
 
       while (beat + runLength < 4) {
@@ -1440,9 +880,9 @@ function buildXmlPart(historyRows, voiceIndex, partId) {
         }
 
         const nextVoice = historyRows[nextRowIndex][voiceIndex];
-        const nextIsRest = nextVoice.state === 0 || !nextVoice.pitch;
-        const samePitch = !isRest && !nextIsRest && nextVoice.pitch === currentVoice.pitch;
-        const nextIsAttack = nextVoice.state === 2;
+        const nextIsRest = !nextVoice || nextVoice.state === 0 || nextVoice.midi === null;
+        const samePitch = !isRest && !nextIsRest && nextVoice.midi === currentVoice.midi;
+        const nextIsAttack = nextVoice && nextVoice.state === 2;
         const sameRest = isRest && nextIsRest;
 
         if ((!samePitch || nextIsAttack) && !sameRest) {
@@ -1453,20 +893,20 @@ function buildXmlPart(historyRows, voiceIndex, partId) {
       }
 
       if (isRest) {
-        lines.push(buildXmlNote({ isRest: true, pitch: null, duration: runLength }));
+        lines.push(buildXmlNote({ isRest: true, midi: null, duration: runLength }));
       } else {
         const previousVoice = rowIndex > 0 ? historyRows[rowIndex - 1][voiceIndex] : null;
         const nextVoice = rowIndex + runLength < historyRows.length ? historyRows[rowIndex + runLength][voiceIndex] : null;
         const tieStop = Boolean(
-          previousVoice && previousVoice.state !== 0 && previousVoice.state !== 2 && previousVoice.pitch === currentVoice.pitch,
+          previousVoice && previousVoice.state !== 0 && previousVoice.state !== 2 && previousVoice.midi === currentVoice.midi,
         );
         const tieStart = Boolean(
-          nextVoice && nextVoice.state !== 0 && nextVoice.state !== 2 && nextVoice.pitch === currentVoice.pitch,
+          nextVoice && nextVoice.state !== 0 && nextVoice.state !== 2 && nextVoice.midi === currentVoice.midi,
         );
 
         lines.push(buildXmlNote({
           isRest: false,
-          pitch: currentVoice.pitch,
+          midi: currentVoice.midi,
           duration: runLength,
           tieStart,
           tieStop,
@@ -1485,7 +925,7 @@ function buildXmlPart(historyRows, voiceIndex, partId) {
 }
 
 function toMusicXml(historyRows) {
-  const title = "Recorder Trio CA - Player Gated";
+  const title = "Recorder Trio Markov Morph";
   const parts = [
     { id: "P1", name: "Alto Recorder" },
     { id: "P2", name: "Tenor Recorder" },
@@ -1515,69 +955,173 @@ function toMusicXml(historyRows) {
   return lines.join("\n");
 }
 
-function pitchToMidi(pitch) {
-  const cleaned = pitch.replace(/[^A-Ga-g#\-xXn]/g, "");
-  const letterMatch = cleaned.match(/[A-Ga-g]+/);
-  if (!letterMatch) {
-    return null;
+function getXmlText() {
+  if (xmlCacheDirty) {
+    xmlCache = toMusicXml(voiceHistory);
+    xmlCacheDirty = false;
   }
 
-  const letters = letterMatch[0];
-  const accidentalPart = cleaned.slice(letters.length);
-  const letter = letters[0];
-  const repeats = letters.length;
-
-  const lowerBase = {
-    c: 60,
-    d: 62,
-    e: 64,
-    f: 65,
-    g: 67,
-    a: 69,
-    b: 71,
-  };
-
-  const upperBase = {
-    C: 48,
-    D: 50,
-    E: 52,
-    F: 53,
-    G: 55,
-    A: 57,
-    B: 59,
-  };
-
-  let midi = null;
-  if (letter >= "a" && letter <= "z") {
-    midi = lowerBase[letter] + 12 * (repeats - 1);
-  } else {
-    midi = upperBase[letter] - 12 * (repeats - 1);
+  if (xmlOutputEl) {
+    xmlOutputEl.value = xmlCache;
   }
 
-  if (Number.isNaN(midi) || midi === undefined || midi === null) {
-    return null;
+  return xmlCache;
+}
+
+function numberToBytes(value, length) {
+  const bytes = [];
+  for (let i = length - 1; i >= 0; i -= 1) {
+    bytes[i] = value & 0xff;
+    value >>= 8;
+  }
+  return bytes;
+}
+
+function stringToBytes(text) {
+  return Array.from(text).map((ch) => ch.charCodeAt(0));
+}
+
+function toVarLen(value) {
+  let buffer = value & 0x7f;
+  const bytes = [];
+
+  while ((value >>= 7) > 0) {
+    buffer <<= 8;
+    buffer |= (value & 0x7f) | 0x80;
   }
 
-  let accidental = 0;
-  const naturalized = accidentalPart.includes("n");
-  if (!naturalized) {
-    for (const ch of accidentalPart) {
-      if (ch === "#") {
-        accidental += 1;
-      } else if (ch === "x" || ch === "X") {
-        accidental += 2;
-      } else if (ch === "-") {
-        accidental -= 1;
-      }
+  while (true) {
+    bytes.push(buffer & 0xff);
+    if (buffer & 0x80) {
+      buffer >>= 8;
+    } else {
+      break;
     }
   }
 
-  midi += accidental;
-  return Math.max(0, Math.min(127, midi));
+  return bytes;
 }
 
-function midiToFrequency(midi) {
-  return 440 * (2 ** ((midi - 69) / 12));
+function getTempoBpm() {
+  return Number(speedInput.value);
+}
+
+function getStepDurationMs() {
+  const bpm = Math.max(1, getTempoBpm());
+  return Math.round(60000 / bpm);
+}
+
+function createMidiEvents(historyRows) {
+  const events = [];
+  const tempoUsPerQuarter = Math.max(1000, Math.round(60000000 / Math.max(1, getTempoBpm())));
+
+  events.push({ tick: 0, kind: "meta", bytes: [0xff, 0x03, 0x1a, ...stringToBytes("Recorder Trio Markov Morph")] });
+  events.push({ tick: 0, kind: "meta", bytes: [0xff, 0x51, 0x03, ...numberToBytes(tempoUsPerQuarter, 3)] });
+
+  for (let ch = 0; ch < PLAYER_NAMES.length; ch += 1) {
+    events.push({ tick: 0, kind: "program", bytes: [0xc0 + ch, MIDI_RECORDER_PROGRAM] });
+  }
+
+  for (let voice = 0; voice < PLAYER_NAMES.length; voice += 1) {
+    let currentNote = null;
+
+    for (let step = 0; step < historyRows.length; step += 1) {
+      const tick = step * MIDI_TPQ;
+      const voiceData = historyRows[step][voice];
+
+      if (!voiceData || voiceData.state === 0 || voiceData.midi === null) {
+        if (currentNote !== null) {
+          events.push({ tick, kind: "off", bytes: [0x80 + voice, currentNote.pitch, 0] });
+          currentNote = null;
+        }
+        continue;
+      }
+
+      const pitch = voiceData.midi;
+      const velocity = getMidiVelocity(voiceData.state === 2);
+
+      if (currentNote === null) {
+        events.push({ tick, kind: "on", bytes: [0x90 + voice, pitch, velocity] });
+        currentNote = { pitch };
+      } else if (currentNote.pitch !== pitch) {
+        events.push({ tick, kind: "off", bytes: [0x80 + voice, currentNote.pitch, 0] });
+        events.push({ tick, kind: "on", bytes: [0x90 + voice, pitch, velocity] });
+        currentNote = { pitch };
+      }
+    }
+
+    if (currentNote !== null) {
+      const endTick = historyRows.length * MIDI_TPQ;
+      events.push({ tick: endTick, kind: "off", bytes: [0x80 + voice, currentNote.pitch, 0] });
+    }
+  }
+
+  events.sort((a, b) => {
+    if (a.tick !== b.tick) {
+      return a.tick - b.tick;
+    }
+
+    const priority = { off: 0, meta: 1, program: 2, on: 3 };
+    return priority[a.kind] - priority[b.kind];
+  });
+
+  return events;
+}
+
+function buildMidiFileBytes(historyRows) {
+  const header = [
+    ...stringToBytes("MThd"),
+    ...numberToBytes(6, 4),
+    ...numberToBytes(0, 2),
+    ...numberToBytes(1, 2),
+    ...numberToBytes(MIDI_TPQ, 2),
+  ];
+
+  const events = createMidiEvents(historyRows);
+  const trackData = [];
+  let lastTick = 0;
+
+  for (const event of events) {
+    const delta = event.tick - lastTick;
+    trackData.push(...toVarLen(delta), ...event.bytes);
+    lastTick = event.tick;
+  }
+
+  trackData.push(0x00, 0xff, 0x2f, 0x00);
+
+  const track = [
+    ...stringToBytes("MTrk"),
+    ...numberToBytes(trackData.length, 4),
+    ...trackData,
+  ];
+
+  return new Uint8Array([...header, ...track]);
+}
+
+function downloadBlob(content, type, filenamePrefix, extension) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  anchor.href = url;
+  anchor.download = `${filenamePrefix}-${timestamp}.${extension}`;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
+
+function downloadKern() {
+  downloadBlob(toKern(voiceHistory), "text/plain;charset=utf-8", "recorder-trio-markov-morph", "krn");
+}
+
+function downloadXml() {
+  downloadBlob(getXmlText(), "application/vnd.recordare.musicxml+xml;charset=utf-8", "recorder-trio-markov-morph", "musicxml");
+}
+
+function downloadMidi() {
+  const midiBytes = buildMidiFileBytes(voiceHistory);
+  downloadBlob(midiBytes, "audio/midi", "recorder-trio-markov-morph", "mid");
 }
 
 function ensureAudioContext() {
@@ -1693,31 +1237,23 @@ function silenceAllVoices() {
   }
 }
 
-function syncAudioToRow(row, prevRow) {
+function syncAudioToRow(row) {
   if (!audioEnabled || !audioCtx || !masterGain) {
     return;
   }
 
   for (let i = 0; i < PLAYER_NAMES.length; i += 1) {
     const currentVoice = row[i];
-    const previousVoice = prevRow[i];
     const currentSynth = voiceSynths[i];
 
-    if (currentVoice.state === 0 || !currentVoice.pitch) {
+    if (!currentVoice || currentVoice.state === 0 || currentVoice.midi === null) {
       if (currentSynth) {
         stopVoice(i, audioCtx.currentTime);
       }
       continue;
     }
 
-    const midi = pitchToMidi(currentVoice.pitch);
-    if (midi === null) {
-      if (currentSynth) {
-        stopVoice(i, audioCtx.currentTime);
-      }
-      continue;
-    }
-
+    const midi = currentVoice.midi;
     const isStrike = currentVoice.state === 2;
 
     if (!currentSynth) {
@@ -1732,7 +1268,7 @@ function syncAudioToRow(row, prevRow) {
   }
 }
 
-async function triggerAudioForRow(row, prevRow) {
+async function triggerAudioForRow(row) {
   if (!audioEnabled) {
     return;
   }
@@ -1745,224 +1281,82 @@ async function triggerAudioForRow(row, prevRow) {
     return;
   }
 
-  syncAudioToRow(row, prevRow);
+  syncAudioToRow(row);
 }
 
-function numberToBytes(value, length) {
-  const bytes = [];
-  for (let i = length - 1; i >= 0; i -= 1) {
-    bytes[i] = value & 0xff;
-    value >>= 8;
-  }
-  return bytes;
-}
+function renderHistory() {
+  historyGridEl.innerHTML = "";
 
-function stringToBytes(text) {
-  return Array.from(text).map((ch) => ch.charCodeAt(0));
-}
+  const visibleHistory = activityHistory.slice(-96);
+  const totalCells = getTotalCells();
 
-function toVarLen(value) {
-  let buffer = value & 0x7f;
-  const bytes = [];
+  for (const row of visibleHistory) {
+    const rowEl = document.createElement("div");
+    rowEl.className = "history-row";
+    rowEl.style.gridTemplateColumns = `repeat(${totalCells}, minmax(24px, 1fr))`;
 
-  while ((value >>= 7) > 0) {
-    buffer <<= 8;
-    buffer |= (value & 0x7f) | 0x80;
-  }
-
-  while (true) {
-    bytes.push(buffer & 0xff);
-    if (buffer & 0x80) {
-      buffer >>= 8;
-    } else {
-      break;
-    }
-  }
-
-  return bytes;
-}
-
-function createMidiEvents(historyRows) {
-  const events = [];
-  const tempoUsPerQuarter = Math.max(1000, Math.round(60000000 / Math.max(1, getTempoBpm())));
-
-  events.push({ tick: 0, kind: "meta", bytes: [0xff, 0x03, 0x1f, ...stringToBytes("Recorder Trio CA - Player Gated")] });
-  events.push({
-    tick: 0,
-    kind: "meta",
-    bytes: [
-      0xff,
-      0x51,
-      0x03,
-      ...numberToBytes(tempoUsPerQuarter, 3),
-    ],
-  });
-
-  for (let ch = 0; ch < PLAYER_NAMES.length; ch += 1) {
-    events.push({ tick: 0, kind: "program", bytes: [0xc0 + ch, MIDI_RECORDER_PROGRAM] });
-  }
-
-  for (let voice = 0; voice < PLAYER_NAMES.length; voice += 1) {
-    let currentNote = null;
-    let prevVoice = historyRows[0][voice];
-
-    for (let step = 0; step < historyRows.length; step += 1) {
-      const tick = step * MIDI_TPQ;
-      const voiceData = historyRows[step][voice];
-
-      if (voiceData.state === 0 || !voiceData.pitch) {
-        if (currentNote !== null) {
-          events.push({ tick, kind: "off", bytes: [0x80 + voice, currentNote.pitch, 0] });
-          currentNote = null;
-        }
-        prevVoice = voiceData;
-        continue;
+    for (let i = 0; i < row.length; i += 1) {
+      const value = row[i];
+      const cell = document.createElement("div");
+      cell.className = `history-cell s${value}`;
+      if ((i + 1) % blockSize === 0 && i < totalCells - 1) {
+        cell.classList.add("block-divider");
       }
-
-      const pitch = pitchToMidi(voiceData.pitch);
-      if (pitch === null) {
-        if (currentNote !== null) {
-          events.push({ tick, kind: "off", bytes: [0x80 + voice, currentNote.pitch, 0] });
-          currentNote = null;
-        }
-        prevVoice = voiceData;
-        continue;
-      }
-
-      const velocity = getMidiVelocity(voiceData.state === 2);
-
-      if (currentNote === null) {
-        events.push({ tick, kind: "on", bytes: [0x90 + voice, pitch, velocity] });
-        currentNote = { pitch };
-      } else if (currentNote.pitch !== pitch) {
-        events.push({ tick, kind: "off", bytes: [0x80 + voice, currentNote.pitch, 0] });
-        events.push({ tick, kind: "on", bytes: [0x90 + voice, pitch, velocity] });
-        currentNote = { pitch };
-      }
-
-      prevVoice = voiceData;
+      rowEl.appendChild(cell);
     }
 
-    if (currentNote !== null) {
-      const endTick = historyRows.length * MIDI_TPQ;
-      events.push({ tick: endTick, kind: "off", bytes: [0x80 + voice, currentNote.pitch, 0] });
-    }
+    historyGridEl.appendChild(rowEl);
   }
 
-  events.sort((a, b) => {
-    if (a.tick !== b.tick) {
-      return a.tick - b.tick;
-    }
-
-    const priority = { off: 0, meta: 1, program: 2, on: 3 };
-    return priority[a.kind] - priority[b.kind];
-  });
-
-  return events;
+  historyGridEl.scrollTop = historyGridEl.scrollHeight;
 }
 
-function buildMidiFileBytes(historyRows) {
-  const header = [
-    ...stringToBytes("MThd"),
-    ...numberToBytes(6, 4),
-    ...numberToBytes(0, 2),
-    ...numberToBytes(1, 2),
-    ...numberToBytes(MIDI_TPQ, 2),
-  ];
-
-  const events = createMidiEvents(historyRows);
-  const trackData = [];
-  let lastTick = 0;
-
-  for (const event of events) {
-    const delta = event.tick - lastTick;
-    trackData.push(...toVarLen(delta), ...event.bytes);
-    lastTick = event.tick;
-  }
-
-  trackData.push(0x00, 0xff, 0x2f, 0x00);
-
-  const track = [
-    ...stringToBytes("MTrk"),
-    ...numberToBytes(trackData.length, 4),
-    ...trackData,
-  ];
-
-  return new Uint8Array([...header, ...track]);
+function renderKern() {
+  kernOutputEl.value = toKern(voiceHistory);
 }
 
-function downloadMidi() {
-  if (voiceHistory.length === 0) {
+function renderXml() {
+  if (xmlCacheDirty) {
+    xmlOutputEl.value = "XML reflects the current generated rows. Click Save XML to export.";
     return;
   }
-
-  const midiBytes = buildMidiFileBytes(voiceHistory);
-  const blob = new Blob([midiBytes], { type: "audio/midi" });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-  anchor.href = url;
-  anchor.download = `recorder-trio-ca-player-gated-${timestamp}.mid`;
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-  URL.revokeObjectURL(url);
+  xmlOutputEl.value = xmlCache;
 }
 
-function downloadKern() {
-  const kernText = toKern(voiceHistory);
-  const blob = new Blob([kernText], { type: "text/plain;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-  anchor.href = url;
-  anchor.download = `recorder-trio-ca-player-gated-${timestamp}.krn`;
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-  URL.revokeObjectURL(url);
+function renderAll() {
+  renderHistory();
+  renderMarkovDebug();
+  renderKern();
+  renderXml();
 }
 
-function downloadXml(forceRefresh = false) {
-  if (forceRefresh) {
-    reseedRng(rngSeedInput.value);
-    const completed = generateFullPieceSilently();
-    if (!completed) {
-      console.warn("Generation cap reached before completion.");
-    }
+function appendGeneration(voices, options = {}) {
+  const { render = true, triggerAudio = true } = options;
+  voiceHistory.push(voices);
+  activityHistory.push(voicesToActivityRow(voices));
+  invalidateXmlCache();
+
+  if (voiceHistory.length > MAX_HISTORY_ROWS) {
+    voiceHistory = voiceHistory.slice(-MAX_HISTORY_ROWS);
+    activityHistory = activityHistory.slice(-MAX_HISTORY_ROWS);
   }
 
-  const xmlText = getXmlText();
-  const blob = new Blob([xmlText], { type: "application/vnd.recordare.musicxml+xml;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-  anchor.href = url;
-  anchor.download = `recorder-trio-ca-player-gated-${timestamp}.musicxml`;
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-  URL.revokeObjectURL(url);
-}
+  if (triggerAudio) {
+    triggerAudioForRow(voices);
+  }
 
-function invalidateXmlCache() {
-  xmlCacheDirty = true;
-  if (xmlOutputEl) {
-    xmlOutputEl.value = "XML is generated on demand. Click Export XML to build the latest file.";
+  if (render) {
+    renderAll();
   }
 }
 
-function getXmlText() {
-  if (xmlCacheDirty) {
-    xmlCache = toMusicXml(voiceHistory);
-    xmlCacheDirty = false;
+function stopPlayback() {
+  if (playTimer !== null) {
+    window.clearInterval(playTimer);
+    playTimer = null;
   }
-
-  if (xmlOutputEl) {
-    xmlOutputEl.value = xmlCache;
-  }
-
-  return xmlCache;
+  silenceAllVoices();
+  playBtn.textContent = "Play";
 }
 
 function stopMidiPreview(resetButtonState = true, silenceVoices = true) {
@@ -1994,9 +1388,7 @@ function runMidiPreviewTick() {
     return;
   }
 
-  const row = voiceHistory[midiPreviewIndex];
-  const prevRow = midiPreviewIndex > 0 ? voiceHistory[midiPreviewIndex - 1] : row;
-  syncAudioToRow(row, prevRow);
+  syncAudioToRow(voiceHistory[midiPreviewIndex]);
   midiPreviewIndex += 1;
 
   if (midiPreviewIndex >= voiceHistory.length) {
@@ -2009,8 +1401,7 @@ function startMidiPreviewTimer() {
     window.clearInterval(midiPreviewTimer);
   }
 
-  const ms = getStepDurationMs();
-  midiPreviewTimer = window.setInterval(runMidiPreviewTick, ms);
+  midiPreviewTimer = window.setInterval(runMidiPreviewTick, getStepDurationMs());
 }
 
 async function startMidiPreview() {
@@ -2042,286 +1433,82 @@ async function startMidiPreview() {
   }
 }
 
-function renderSeedGrid() {
-  seedGridEl.innerHTML = "";
-  const totalCells = getTotalCells();
-  const labels = getBlockLabels();
-  const gateOffset = getOutputCellOffset();
-  seedGridEl.style.gridTemplateColumns = `repeat(${totalCells}, minmax(50px, 1fr))`;
-
-  for (let i = 0; i < totalCells; i += 1) {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = `seed-cell state-${seed[i]}`;
-    if ((i + 1) % blockSize === 0 && i < totalCells - 1) {
-      btn.classList.add("block-divider");
-    }
-
-    const playerLabel = labels[i];
-    const localCell = (i % blockSize) + 1;
-    const outputLabel = localCell - 1 === gateOffset ? " (gate)" : "";
-    if (localCell - 1 === gateOffset) {
-      btn.classList.add("is-gate");
-    }
-
-    btn.dataset.index = String(i);
-    btn.innerHTML = `<strong>${seed[i]}</strong><small>${playerLabel} C${localCell}${outputLabel}</small>`;
-    btn.addEventListener("click", () => {
-      seed[i] = seed[i] === 1 ? 0 : 1;
-      stopPlayback();
-      stopMidiPreview();
-      resetSimulationState();
-      renderAll();
-    });
-
-    seedGridEl.appendChild(btn);
-  }
-}
-
-function renderHistory() {
-  historyGridEl.innerHTML = "";
-  const totalCells = getTotalCells();
-  const gateOffset = getOutputCellOffset();
-
-  const visibleHistory = caHistory.slice(-maxHistoryRows);
-  for (const row of visibleHistory) {
-    const rowEl = document.createElement("div");
-    rowEl.className = "history-row";
-    rowEl.style.gridTemplateColumns = `repeat(${totalCells}, minmax(24px, 1fr))`;
-
-    row.forEach((value) => {
-      const cell = document.createElement("div");
-      cell.className = `history-cell s${value}`;
-      const i = rowEl.children.length;
-      if ((i + 1) % blockSize === 0 && i < totalCells - 1) {
-        cell.classList.add("block-divider");
-      }
-      if (i % blockSize === gateOffset) {
-        cell.classList.add("is-gate");
-      }
-      rowEl.appendChild(cell);
-    });
-
-    historyGridEl.appendChild(rowEl);
-  }
-
-  historyGridEl.scrollTop = historyGridEl.scrollHeight;
-}
-
-function renderKern() {
-  kernOutputEl.value = toKern(voiceHistory);
-}
-
-function renderXml() {
-  if (xmlCacheDirty) {
-    xmlOutputEl.value = "XML is generated on demand. Click Export XML to build the latest file.";
-    return;
-  }
-
-  xmlOutputEl.value = xmlCache;
-}
-
-function renderAll() {
-  renderSeedGrid();
-  renderHistory();
-  renderKern();
-  renderXml();
-}
-
-function setNeighborhoodSize(value) {
-  blockSize = normalizeBlockSize(value);
-  blockSizeInput.value = String(blockSize);
-  blockSizeLabel.textContent = `${blockSize} cells`;
-}
-
-function applyNeighborhoodSize(value) {
-  setNeighborhoodSize(value);
-  seed = createDefaultSeed();
-  resetSimulationState();
-}
-
-function allPlayersFinished() {
-  const lastChordIndex = SCORE_CHORDS.length - 1;
-  return playerProgress.every((player) => player.chordIndex >= lastChordIndex);
-}
-
-function appendGeneration(caRow, voices, prevVoices, options = {}) {
-  const { render = true, triggerAudio = true } = options;
-  currentCaRow = [...caRow];
-  caHistory.push([...currentCaRow]);
-  voiceHistory.push(voices);
-  invalidateXmlCache();
-
-  if (caHistory.length > 640) {
-    caHistory = caHistory.slice(-640);
-    voiceHistory = voiceHistory.slice(-640);
-  }
-
-  if (triggerAudio) {
-    triggerAudioForRow(voices, prevVoices);
-  }
-
-  if (render) {
-    renderHistory();
-    renderKern();
-    renderXml();
-  }
-}
-
-function generateFullPieceSilently() {
-  stopPlayback();
-  stopMidiPreview();
-  silenceAllVoices();
-  resetSimulationState();
-
-  const MAX_GENERATION_STEPS = 50000;
-  let steps = 0;
-
-  while (!finalPhase.completed && steps < MAX_GENERATION_STEPS) {
-    if (finalPhase.active) {
-      const prevVoices = voiceHistory[voiceHistory.length - 1];
-      finalPhase.beatsElapsed += 1;
-
-      if (finalPhase.beatsElapsed > FINAL_CHORD_HOLD_BEATS) {
-        const restVoices = createRestVoices();
-        appendGeneration(currentCaRow, restVoices, prevVoices, { render: false, triggerAudio: false });
-        finalPhase.completed = true;
-        break;
-      }
-
-      const heldVoices = prevVoices.map((voice) => ({
-        state: 1,
-        pitch: voice.pitch,
-      }));
-      appendGeneration(currentCaRow, heldVoices, prevVoices, { render: false, triggerAudio: false });
-      steps += 1;
-      continue;
-    }
-
-    const nextCa = nextState(currentCaRow, lambdaByVoice);
-    const { nextPlayers, voices, allFinished } = advancePlayersFromCa(nextCa);
-    const prevVoices = voiceHistory[voiceHistory.length - 1];
-
-    playerProgress = nextPlayers;
-    appendGeneration(nextCa, voices, prevVoices, { render: false, triggerAudio: false });
-
-    if (allFinished) {
-      finalPhase.active = true;
-      finalPhase.beatsElapsed = 1;
-    }
-
-    steps += 1;
-  }
-
-  renderHistory();
-  renderKern();
-  renderXml();
-  return finalPhase.completed;
-}
-
-function stopPlayback() {
-  if (playTimer !== null) {
-    window.clearInterval(playTimer);
-    playTimer = null;
-  }
-  silenceAllVoices();
-  playBtn.textContent = "Play";
-}
-
 function stepForward() {
   stopMidiPreview(true, false);
-
-  if (finalPhase.completed) {
-    stopPlayback();
-    return;
-  }
-
-  if (finalPhase.active) {
-    const prevVoices = voiceHistory[voiceHistory.length - 1];
-    finalPhase.beatsElapsed += 1;
-
-    if (finalPhase.beatsElapsed > FINAL_CHORD_HOLD_BEATS) {
-      const restVoices = createRestVoices();
-      appendGeneration(currentCaRow, restVoices, prevVoices);
-      finalPhase.completed = true;
-      stopPlayback();
-      return;
-    }
-
-    const nextPlayers = playerProgress.map((player) => ({ ...player }));
-    const heldVoices = [];
-
-    for (let voice = 0; voice < PLAYER_NAMES.length; voice += 1) {
-      const player = nextPlayers[voice];
-      const currentChord = SCORE_CHORDS[player.chordIndex];
-      const choices = getChordChoicesForVoice(currentChord, voice);
-
-      if ((player.forcedRestRemaining ?? 0) > 0) {
-        player.forcedRestRemaining -= 1;
-        player.pitch = null;
-        player.decayRemaining = 0;
-        player.breathBeats = 0;
-        heldVoices.push({ state: 0, pitch: null });
-        continue;
-      }
-
-      if (player.pitch && (player.breathBeats ?? 0) >= BREATH_MAX_BEATS) {
-        player.pitch = null;
-        player.decayRemaining = 0;
-        player.breathBeats = 0;
-        player.forcedRestRemaining = Math.max(0, BREATH_REST_BEATS - 1);
-        heldVoices.push({ state: 0, pitch: null });
-        continue;
-      }
-
-      if (!player.pitch) {
-        if (choices.length > 0) {
-          player.pitch = randomChoice(choices);
-          player.decayRemaining = NO_VALID_NOTE_DECAY_LIFE;
-          player.breathBeats = 1;
-          player.forcedRestRemaining = 0;
-          heldVoices.push({ state: 2, pitch: player.pitch });
-        } else {
-          player.decayRemaining = 0;
-          player.breathBeats = 0;
-          heldVoices.push({ state: 0, pitch: null });
-        }
-        continue;
-      }
-
-      player.decayRemaining = NO_VALID_NOTE_DECAY_LIFE;
-      player.breathBeats = (player.breathBeats ?? 0) + 1;
-      player.forcedRestRemaining = 0;
-      heldVoices.push({ state: 1, pitch: player.pitch });
-    }
-
-    playerProgress = nextPlayers;
-    appendGeneration(currentCaRow, heldVoices, prevVoices);
-    return;
-  }
-
-  const nextCa = nextState(currentCaRow, lambdaByVoice);
-  const { nextPlayers, voices, allFinished } = advancePlayersFromCa(nextCa);
-
-  const prevVoices = voiceHistory[voiceHistory.length - 1];
-
-  playerProgress = nextPlayers;
-  appendGeneration(nextCa, voices, prevVoices);
-
-  if (allFinished) {
-    finalPhase.active = true;
-    finalPhase.beatsElapsed = 1;
-  }
+  const voices = voiceEngines.map((engine, voiceIndex) => stepVoice(engine, voiceIndex));
+  appendGeneration(voices);
 }
 
 function startPlayback() {
   stopMidiPreview();
   stopPlayback();
-  const ms = getStepDurationMs();
-  playTimer = window.setInterval(stepForward, ms);
+  playTimer = window.setInterval(stepForward, getStepDurationMs());
   const currentVoices = voiceHistory[voiceHistory.length - 1];
-  triggerAudioForRow(currentVoices, currentVoices);
+  triggerAudioForRow(currentVoices);
   playBtn.textContent = "Pause";
+}
+
+function setLaneWidth(value) {
+  blockSize = normalizeBlockSize(value);
+  blockSizeInput.value = String(blockSize);
+  blockSizeLabel.textContent = `${blockSize} cells`;
+}
+
+function getMelodyInputs() {
+  return [
+    bassMelodyInput.value,
+    tenorMelodyInput.value,
+    altoMelodyInput.value,
+  ];
+}
+
+function writeMelodiesToInputs(melodies) {
+  bassMelodyInput.value = melodies[0];
+  tenorMelodyInput.value = melodies[1];
+  altoMelodyInput.value = melodies[2];
+}
+
+function rebuildVoiceEnginesFromInputs() {
+  const melodyTexts = getMelodyInputs();
+  sourceMelodies = melodyTexts.map((text, voiceIndex) => parseMelodyText(text, VOICE_MIDI_RANGES[voiceIndex]));
+
+  voiceEngines = sourceMelodies.map((melody, voiceIndex) => createVoiceEngine(voiceIndex, melody));
+}
+
+function resetSimulationState() {
+  reseedRng(rngSeedText);
+  rebuildVoiceEnginesFromInputs();
+
+  voiceHistory = [];
+  activityHistory = [];
+  latestDebugByVoice = [];
+
+  const initial = createInitialRow();
+  appendGeneration(initial, { render: false, triggerAudio: false });
+
+  for (let i = 0; i < voiceEngines.length; i += 1) {
+    latestDebugByVoice[i] = {
+      hasRow: false,
+      reason: "reset",
+      current: voiceEngines[i].currentMidi,
+      candidates: [],
+      baseProbabilities: [],
+      adjustedProbabilities: [],
+      temperature: getGlobalTemperature(),
+      candidate: null,
+      morphed: voiceEngines[i].currentMidi,
+      temperativeScale: getTemperativeScale(voiceTemperativeControls[i]),
+      state: voiceEngines[i].currentMidi === null ? 0 : 2,
+    };
+  }
+}
+
+function applyMelodiesAndReset() {
+  stopPlayback();
+  stopMidiPreview();
+  silenceAllVoices();
+  resetSimulationState();
+  renderAll();
 }
 
 stepBtn.addEventListener("click", () => {
@@ -2339,9 +1526,13 @@ playBtn.addEventListener("click", () => {
 resetBtn.addEventListener("click", () => {
   stopPlayback();
   stopMidiPreview();
-  resetSimulationState();
   silenceAllVoices();
+  resetSimulationState();
   renderAll();
+});
+
+applyMelodiesBtn.addEventListener("click", () => {
+  applyMelodiesAndReset();
 });
 
 rngApplyBtn.addEventListener("click", () => {
@@ -2378,20 +1569,11 @@ kernBtn.addEventListener("click", () => {
 });
 
 xmlBtn.addEventListener("click", () => {
-  downloadXml(true);
+  downloadXml();
 });
 
 generateXmlBtn.addEventListener("click", () => {
-  const originalLabel = generateXmlBtn.textContent;
-  generateXmlBtn.disabled = true;
-  generateXmlBtn.textContent = "Generating...";
-
-  try {
-    downloadXml(true);
-  } finally {
-    generateXmlBtn.disabled = false;
-    generateXmlBtn.textContent = originalLabel;
-  }
+  downloadXml();
 });
 
 midiBtn.addEventListener("click", () => {
@@ -2427,7 +1609,7 @@ audioBtn.addEventListener("click", async () => {
   audioBtn.textContent = "Audio: On";
   audioBtn.classList.remove("is-muted");
   const currentVoices = voiceHistory[voiceHistory.length - 1];
-  syncAudioToRow(currentVoices, currentVoices);
+  syncAudioToRow(currentVoices);
 });
 
 speedInput.addEventListener("input", () => {
@@ -2455,48 +1637,60 @@ volumeInput.addEventListener("input", () => {
 });
 
 lambdaInput.addEventListener("input", () => {
-  lambda = Number(lambdaInput.value);
-  lambdaLabel.textContent = lambda.toFixed(2);
-
-  lambdaByVoice = [lambda, lambda, lambda];
-  bassLambdaInput.value = lambda.toFixed(2);
-  tenorLambdaInput.value = lambda.toFixed(2);
-  altoLambdaInput.value = lambda.toFixed(2);
-  bassLambdaLabel.textContent = lambda.toFixed(2);
-  tenorLambdaLabel.textContent = lambda.toFixed(2);
-  altoLambdaLabel.textContent = lambda.toFixed(2);
+  globalTemperatureControl = Number(lambdaInput.value);
+  const temp = getGlobalTemperature();
+  lambdaLabel.textContent = temp.toFixed(2);
 });
 
 bassLambdaInput.addEventListener("input", () => {
-  lambdaByVoice[0] = Number(bassLambdaInput.value);
-  bassLambdaLabel.textContent = lambdaByVoice[0].toFixed(2);
+  voiceTemperativeControls[0] = Number(bassLambdaInput.value);
+  bassLambdaLabel.textContent = getTemperativeScale(voiceTemperativeControls[0]).toFixed(2);
 });
 
 tenorLambdaInput.addEventListener("input", () => {
-  lambdaByVoice[1] = Number(tenorLambdaInput.value);
-  tenorLambdaLabel.textContent = lambdaByVoice[1].toFixed(2);
+  voiceTemperativeControls[1] = Number(tenorLambdaInput.value);
+  tenorLambdaLabel.textContent = getTemperativeScale(voiceTemperativeControls[1]).toFixed(2);
 });
 
 altoLambdaInput.addEventListener("input", () => {
-  lambdaByVoice[2] = Number(altoLambdaInput.value);
-  altoLambdaLabel.textContent = lambdaByVoice[2].toFixed(2);
+  voiceTemperativeControls[2] = Number(altoLambdaInput.value);
+  altoLambdaLabel.textContent = getTemperativeScale(voiceTemperativeControls[2]).toFixed(2);
 });
 
 blockSizeInput.addEventListener("input", () => {
   stopPlayback();
   stopMidiPreview();
-  applyNeighborhoodSize(blockSizeInput.value);
-  renderAll();
+  setLaneWidth(blockSizeInput.value);
+  renderHistory();
 });
 
-lambdaLabel.textContent = lambda.toFixed(2);
-bassLambdaLabel.textContent = lambdaByVoice[0].toFixed(2);
-tenorLambdaLabel.textContent = lambdaByVoice[1].toFixed(2);
-altoLambdaLabel.textContent = lambdaByVoice[2].toFixed(2);
+bassMelodyInput.addEventListener("keydown", (event) => {
+  if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+    applyMelodiesAndReset();
+  }
+});
+
+tenorMelodyInput.addEventListener("keydown", (event) => {
+  if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+    applyMelodiesAndReset();
+  }
+});
+
+altoMelodyInput.addEventListener("keydown", (event) => {
+  if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+    applyMelodiesAndReset();
+  }
+});
+
+lambdaLabel.textContent = getGlobalTemperature().toFixed(2);
+bassLambdaLabel.textContent = getTemperativeScale(voiceTemperativeControls[0]).toFixed(2);
+tenorLambdaLabel.textContent = getTemperativeScale(voiceTemperativeControls[1]).toFixed(2);
+altoLambdaLabel.textContent = getTemperativeScale(voiceTemperativeControls[2]).toFixed(2);
 volumeLabel.textContent = `${Number(volumeInput.value)}%`;
 speedLabel.textContent = `${getTempoBpm()} BPM`;
-setNeighborhoodSize(blockSizeInput.value);
+setLaneWidth(blockSizeInput.value);
 
+writeMelodiesToInputs(DEFAULT_MELODY_TEXT);
 reseedRng(rngSeedInput.value);
 resetSimulationState();
 renderAll();
